@@ -1,0 +1,10 @@
+const express = require('express');
+const router = express.Router();
+const authMiddleware = require('../middlewares/auth.middleware');
+const reportController = require('../controllers/report.controller');
+router.post('/', authMiddleware.authUser, reportController.createReport);
+router.get('/', authMiddleware.authUser, reportController.getAllReports);
+router.get('/:id', authMiddleware.authUser, reportController.getReportById);
+router.put('/:id', authMiddleware.authUser, reportController.updateReport);
+router.delete('/:id', authMiddleware.authUser, reportController.deleteReport);
+module.exports = router;
