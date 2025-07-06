@@ -37,6 +37,7 @@ const RegisterScreen = ({ navigation }) => {
 
   const validateForm = () => {
     const { fullName, email, phone, password, confirmPassword } = formData
+    // Alert.alert(fullName, email, phone, password, confirmPassword)
 
     if (!fullName || !email || !phone || !password || !confirmPassword) {
       Alert.alert("Error", "Please fill in all fields")
@@ -67,66 +68,59 @@ const RegisterScreen = ({ navigation }) => {
   }
 
   const handleRegister = async () => {
-    if (!validateForm()) return
+  if (!validateForm()) return;
 
-    setIsLoading(true)
+  setIsLoading(true);
 
-    try {
-      // Check if user already exists
-      const existingUser = await AsyncStorage.getItem("@user_data")
-      if (existingUser) {
-        const user = JSON.parse(existingUser)
-        if (user.email === formData.email) {
-          Alert.alert("Error", "An account with this email already exists")
-          setIsLoading(false)
-          return
-        }
-      }
-
-      // Save user data
-      const userData = {
-        fullName: formData.fullName,
+  try {
+    const response = await fetch("http://192.168.1.78:4000/api/users/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fullname: formData.fullName,
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
-        createdAt: new Date().toISOString(),
-      }
+        logUser: "user", // Assuming logUser is a static value for mobile users
+      }),
+    });
 
-      await AsyncStorage.setItem("@user_data", JSON.stringify(userData))
+    const data = await response.json();
 
-      // Save user profile
-      const profileData = {
-        name: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        notifications: true,
-        locationSharing: true,
-      }
-      await AsyncStorage.setItem("@user_profile", JSON.stringify(profileData))
-
-      // Save login token
-      await AsyncStorage.setItem("@user_token", "logged_in")
-
-      Alert.alert("Success", "Account created successfully!", [
-        {
-          text: "OK",
-          onPress: () => {
-            // Reset navigation stack to prevent going back to register
-            navigation.dispatch(
-              CommonActions.reset({
-                index: 0,
-                routes: [{ name: "Home" }],
-              }),
-            )
-          },
-        },
-      ])
-    } catch (error) {
-      Alert.alert("Error", "Registration failed. Please try again.")
-    } finally {
-      setIsLoading(false)
+    if (!response.ok) {
+      const errorMessage = data.message || (data.errors?.[0]?.msg ?? "Registration failed");
+      Alert.alert("Error", errorMessage);
+      setIsLoading(false);
+      return;
     }
+
+    // Store token and user info
+    await AsyncStorage.setItem("@user_token", data.token);
+    await AsyncStorage.setItem("@user_profile", JSON.stringify(data.user));
+
+    Alert.alert("Success", "Account created successfully!", [
+      {
+        text: "OK",
+        onPress: () => {
+          navigation.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{ name: "Home" }],
+            })
+          );
+        },
+      },
+    ]);
+  } catch (error) {
+    console.error("Registration Error:", error);
+    Alert.alert("Error", "Something went wrong. Please try again.");
+  } finally {
+    setIsLoading(false);
   }
+};
+
 
   const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -152,7 +146,7 @@ const RegisterScreen = ({ navigation }) => {
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity> */}
             <Text style={styles.appIcon}>🚧</Text>
-            <Text style={styles.appTitle}>Create Account</Text>
+            <Text style={styles.appTitle}>Create Acc</Text>
             <Text style={styles.subtitle}>Join Sadak360</Text>
           </View>
 
