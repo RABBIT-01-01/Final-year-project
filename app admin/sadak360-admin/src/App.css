@@ -1,0 +1,359 @@
+App-specific styles
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* App Layout */
+.app-container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.main-content {
+  @apply flex-1 overflow-hidden;
+}
+
+/* Dashboard Specific Styles */
+.dashboard-grid {
+  @apply grid gap-4;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.stats-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+@media (min-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.chart-container {
+  @apply w-full h-64 flex items-center justify-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-300;
+}
+
+/* Map View Specific Styles */
+.map-container {
+  @apply relative w-full h-full min-h-[600px];
+}
+
+.map-legend {
+  @apply absolute top-4 right-4 z-[1000] w-64;
+}
+
+.hazard-details-panel {
+  @apply w-80 border-l bg-white overflow-y-auto;
+}
+
+/* Analytics Specific Styles */
+.analytics-grid {
+  @apply grid gap-4 md:grid-cols-2 lg:grid-cols-3;
+}
+
+.metric-card {
+  @apply card;
+}
+
+.progress-bar {
+  @apply w-full bg-gray-200 rounded-full h-2;
+}
+
+.progress-fill {
+  @apply h-2 rounded-full transition-all duration-300;
+}
+
+/* Browse Hazards Specific Styles */
+.hazards-grid {
+  @apply grid gap-4 md:grid-cols-2 lg:grid-cols-3;
+}
+
+.hazard-card {
+  @apply card overflow-hidden hover:shadow-lg transition-shadow duration-200;
+}
+
+.hazard-image {
+  @apply aspect-video relative overflow-hidden;
+}
+
+.hazard-badges {
+  @apply absolute top-2 right-2 flex gap-2;
+}
+
+/* Filter Styles */
+.filters-container {
+  @apply card;
+}
+
+.filters-grid {
+  @apply grid gap-4 md:grid-cols-4;
+}
+
+.filter-dropdown {
+  @apply relative;
+}
+
+/* Sidebar Specific Styles */
+.sidebar-backdrop {
+  @apply fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden;
+}
+
+.sidebar-container {
+  @apply sidebar lg:translate-x-0 lg:static lg:inset-0;
+}
+
+.sidebar-logo {
+  @apply flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-lg;
+}
+
+.sidebar-brand {
+  @apply flex flex-col;
+}
+
+.sidebar-title {
+  @apply font-semibold text-gray-900;
+}
+
+.sidebar-subtitle {
+  @apply text-xs text-gray-500;
+}
+
+.sidebar-section-title {
+  @apply text-xs font-medium text-gray-500 uppercase tracking-wider mb-3;
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+  .stats-grid {
+    @apply grid-cols-1 sm:grid-cols-2;
+  }
+
+  .dashboard-grid {
+    @apply grid-cols-1;
+  }
+
+  .analytics-grid {
+    @apply grid-cols-1;
+  }
+
+  .hazards-grid {
+    @apply grid-cols-1 sm:grid-cols-2;
+  }
+
+  .filters-grid {
+    @apply grid-cols-1 sm:grid-cols-2;
+  }
+
+  .hazard-details-panel {
+    @apply w-full;
+  }
+
+  .map-legend {
+    @apply w-48 top-2 right-2;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-grid {
+    @apply grid-cols-1;
+  }
+
+  .hazards-grid {
+    @apply grid-cols-1;
+  }
+
+  .filters-grid {
+    @apply grid-cols-1;
+  }
+}
+
+/* Loading States */
+.loading-spinner {
+  border: 2px solid #f3f4f6;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-skeleton {
+  @apply skeleton h-4 w-full;
+}
+
+.loading-card {
+  @apply card p-6 space-y-4;
+}
+
+/* Error States */
+.error-container {
+  @apply flex flex-col items-center justify-center p-8 text-center;
+}
+
+.error-icon {
+  @apply w-12 h-12 text-red-500 mb-4;
+}
+
+.error-title {
+  @apply text-lg font-semibold text-gray-900 mb-2;
+}
+
+.error-message {
+  @apply text-gray-600 mb-4;
+}
+
+.error-state {
+  color: #dc2626;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+}
+
+/* Success States */
+.success-message {
+  @apply flex items-center p-4 bg-green-50 border border-green-200 rounded-lg;
+}
+
+.success-icon {
+  @apply w-5 h-5 text-green-500 mr-3;
+}
+
+.success-text {
+  @apply text-green-800;
+}
+
+.success-state {
+  color: #059669;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+}
+
+/* Warning States */
+.warning-message {
+  @apply flex items-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg;
+}
+
+.warning-icon {
+  @apply w-5 h-5 text-yellow-500 mr-3;
+}
+
+.warning-text {
+  @apply text-yellow-800;
+}
+
+/* Info States */
+.info-message {
+  @apply flex items-center p-4 bg-blue-50 border border-blue-200 rounded-lg;
+}
+
+.info-icon {
+  @apply w-5 h-5 text-blue-500 mr-3;
+}
+
+.info-text {
+  @apply text-blue-800;
+}
+
+/* Hover Effects */
+.hover-lift:hover {
+  transform: translateY(-2px);
+  transition: transform 0.2s ease;
+}
+
+.hover-scale {
+  @apply transition-transform duration-200 hover:scale-105;
+}
+
+.hover-glow {
+  @apply transition-shadow duration-200 hover:shadow-lg;
+}
+
+/* Focus Effects */
+.focus-outline {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+.focus-within-outline {
+  @apply focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2;
+}
+
+/* Text Utilities */
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
+}
+
+/* Layout Utilities */
+.container-narrow {
+  @apply max-w-4xl mx-auto px-4;
+}
+
+.container-wide {
+  @apply max-w-7xl mx-auto px-4;
+}
+
+.section-padding {
+  @apply py-8 px-4;
+}
+
+/* Print Styles */
+@media print {
+  .sidebar-container {
+    display: none !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-full-width {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .card {
+    @apply shadow-none border border-gray-300;
+  }
+}
+
+/* Custom scrollbar for specific containers */
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+}
