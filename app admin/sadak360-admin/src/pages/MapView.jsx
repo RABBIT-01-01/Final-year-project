@@ -227,162 +227,140 @@ const hazards = [
   },
 ]
 
-function MapView() {
-  const [selectedHazard, setSelectedHazard] = useState(null)
-  const mapRef = useRef(null)
-  const mapInstanceRef = useRef(null)
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function clusterHazards(hazards, zoom) {
+  const threshold = zoom >= 16 ? 0 : zoom >= 14 ? 0.3 : zoom >= 12 ? 0.7 : 5;
+  const clusters = [];
+  const visited = new Set();
+
+  for (let i = 0; i < hazards.length; i++) {
+    if (visited.has(i)) continue;
+    const cluster = [hazards[i]];
+    visited.add(i);
+    for (let j = i + 1; j < hazards.length; j++) {
+      if (visited.has(j)) continue;
+      const dist = haversineDistance(
+        hazards[i].lat,
+        hazards[i].lng,
+        hazards[j].lat,
+        hazards[j].lng
+      );
+      if (dist < threshold) {
+        cluster.push(hazards[j]);
+        visited.add(j);
+      }
+    }
+    clusters.push(cluster);
+  }
+  return clusters;
+}
+
+export default function MapView() {
+  const [selectedHazard, setSelectedHazard] = useState(null);
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+
+  const createMarkers = (map, zoom) => {
+    const L = window.L;
+    const clusters = clusterHazards(hazards, zoom);
+
+    clusters.forEach((cluster) => {
+      if (cluster.length === 1) {
+        const hazard = cluster[0];
+        const iconColor =
+          hazard.severity === "High"
+            ? "red"
+            : hazard.severity === "Medium"
+            ? "orange"
+            : "green";
+
+        const customIcon = L.divIcon({
+          className: "custom-marker",
+          html: `<div style="background-color: ${iconColor}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        });
+
+        const marker = L.marker([hazard.lat, hazard.lng], { icon: customIcon })
+          .addTo(map)
+          .on("click", () => {
+            setSelectedHazard(hazard);
+          });
+
+        marker.bindTooltip(hazard.type);
+      } else {
+        const latAvg = cluster.reduce((sum, h) => sum + h.lat, 0) / cluster.length;
+        const lngAvg = cluster.reduce((sum, h) => sum + h.lng, 0) / cluster.length;
+
+        const clusterIcon = L.divIcon({
+          html: `<div style="background-color: #4B5563; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 12px;">${cluster.length}</div>`,
+          className: "cluster-marker",
+          iconSize: [30, 30],
+          iconAnchor: [15, 15],
+        });
+
+        L.marker([latAvg, lngAvg], { icon: clusterIcon }).addTo(map);
+      }
+    });
+  };
 
   useEffect(() => {
-    // Initialize map when component mounts
-    const initMap = () => {
-      // Check if Leaflet is available (loaded from CDN)
-      if (typeof window !== "undefined" && window.L && mapRef.current) {
-        // Clear any existing map
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.remove()
+    if (typeof window === "undefined" || !window.L || !mapRef.current) return;
+
+    const L = window.L;
+    const map = L.map(mapRef.current).setView([27.7172, 85.324], 13);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors",
+      maxZoom: 19,
+    }).addTo(map);
+
+    mapInstanceRef.current = map;
+
+    const render = () => {
+      map.eachLayer((layer) => {
+        if (layer instanceof L.Marker && !layer._url) {
+          map.removeLayer(layer);
         }
+      });
+      createMarkers(map, map.getZoom());
+    };
 
-        const L = window.L
+    map.on("zoomend", render);
+    render();
 
-        // Create map instance
-        const map = L.map(mapRef.current, {
-          center: [27.7172, 85.324],
-          zoom: 13,
-          zoomControl: true,
-        })
-
-        // Add tile layer
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "© OpenStreetMap contributors",
-          maxZoom: 19,
-        }).addTo(map)
-
-        // Store map instance
-        mapInstanceRef.current = map
-
-        // Add markers for each hazard
-        hazards.forEach((hazard) => {
-          // Create custom icon based on severity
-          const iconColor = hazard.severity === "High" ? "red" : hazard.severity === "Medium" ? "orange" : "green"
-
-          const customIcon = L.divIcon({
-            className: "custom-marker",
-            html: `<div style="background-color: ${iconColor}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-            iconSize: [20, 20],
-            iconAnchor: [10, 10],
-          })
-
-          const marker = L.marker([hazard.lat, hazard.lng], { icon: customIcon })
-            .addTo(map)
-            .on("click", () => {
-              setSelectedHazard(hazard)
-            })
-
-          // Custom popup content
-          const popupContent = `
-            <div style="min-width: 200px; font-family: inherit;">
-              <h3 style="margin: 0 0 8px 0; font-weight: bold; font-size: 14px;">${hazard.type}</h3>
-              <p style="margin: 0 0 8px 0; font-size: 12px; color: #666;">${hazard.description}</p>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="padding: 2px 8px; border-radius: 12px; font-size: 11px; background-color: ${
-                  hazard.severity === "High"
-                    ? "#fee2e2; color: #dc2626"
-                    : hazard.severity === "Medium"
-                      ? "#fef3c7; color: #d97706"
-                      : "#dcfce7; color: #16a34a"
-                };">${hazard.severity}</span>
-                <span style="font-size: 11px; color: #6b7280;">${new Date(hazard.timestamp).toLocaleDateString()}</span>
-              </div>
-            </div>
-          `
-
-          marker.bindPopup(popupContent)
-        })
-
-        // Fit map to show all markers
-        if (hazards.length > 0) {
-          const group = new L.featureGroup(map._layers)
-          if (Object.keys(group._layers).length > 0) {
-            map.fitBounds(group.getBounds().pad(0.1))
-          }
-        }
-      }
-    }
-
-    // Wait for Leaflet to load if not already available
-    if (window.L) {
-      initMap()
-    } else {
-      // Poll for Leaflet availability
-      const checkLeaflet = setInterval(() => {
-        if (window.L) {
-          clearInterval(checkLeaflet)
-          initMap()
-        }
-      }, 100)
-
-      // Cleanup interval after 10 seconds
-      setTimeout(() => clearInterval(checkLeaflet), 10000)
-    }
-
-    // Cleanup function
     return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove()
-        mapInstanceRef.current = null
-      }
-    }
-  }, [])
+      map.remove();
+      mapInstanceRef.current = null;
+    };
+  }, []);
 
   const getSeverityColor = (severity) => {
     switch (severity) {
-      case "High":
-        return "badge badge-danger"
-      case "Medium":
-        return "badge badge-warning"
-      case "Low":
-        return "badge badge-success"
-      default:
-        return "badge badge-secondary"
+      case "High": return "badge badge-danger";
+      case "Medium": return "badge badge-warning";
+      case "Low": return "badge badge-success";
+      default: return "badge badge-secondary";
     }
-  }
+  };
 
   return (
     <div className="flex flex-1 h-full">
       <div className="flex-1 relative">
-        <div
-          ref={mapRef}
-          className="w-full h-full"
-          style={{
-            minHeight: "600px",
-            zIndex: 1,
-            backgroundColor: "#f3f4f6", // Fallback background
-          }}
-        />
-
-        {/* Map Legend */}
-        <div className="absolute top-4 right-4 w-64 card" style={{ zIndex: 1000 }}>
-          <div className="card-header">
-            <h3 className="text-sm font-semibold">Hazard Legend</h3>
-          </div>
-          <div className="card-content space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <span className="text-sm">High Severity</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-              <span className="text-sm">Medium Severity</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-sm">Low Severity</span>
-            </div>
-          </div>
-        </div>
+        <div ref={mapRef} className="w-full h-full" style={{ minHeight: "600px" }} />
       </div>
-
-      {/* Hazard Details Panel */}
       {selectedHazard && (
         <div className="w-80 border-l bg-white p-4 overflow-y-auto">
           <div className="flex items-center justify-between mb-4">
@@ -391,27 +369,21 @@ function MapView() {
               <X className="h-4 w-4" />
             </button>
           </div>
-
           <div className="space-y-4">
-            <div>
-              <img
-                src={selectedHazard.image || "/placeholder.svg?height=200&width=300"}
-                alt={selectedHazard.type}
-                className="w-full h-48 object-cover rounded-lg"
-              />
-            </div>
-
+            <img
+              src={selectedHazard.image}
+              alt={selectedHazard.type}
+              className="w-full h-48 object-cover rounded-lg"
+            />
             <div>
               <h4 className="font-medium text-lg">{selectedHazard.type}</h4>
               <p className="text-sm text-gray-600 mt-1">{selectedHazard.description}</p>
             </div>
-
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               <span className="text-sm font-medium">Severity:</span>
               <span className={getSeverityColor(selectedHazard.severity)}>{selectedHazard.severity}</span>
             </div>
-
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               <span className="text-sm font-medium">Location:</span>
@@ -419,18 +391,15 @@ function MapView() {
                 {selectedHazard.lat.toFixed(4)}, {selectedHazard.lng.toFixed(4)}
               </span>
             </div>
-
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               <span className="text-sm font-medium">Reported:</span>
               <span className="text-sm">{new Date(selectedHazard.timestamp).toLocaleString()}</span>
             </div>
-
             <div>
               <span className="text-sm font-medium">Reporter:</span>
               <span className="text-sm ml-2">{selectedHazard.reporter}</span>
             </div>
-
             <div className="pt-4 space-y-2">
               <button className="btn btn-primary w-full">Mark as Resolved</button>
               <button className="btn btn-secondary w-full">Assign to Team</button>
@@ -439,7 +408,6 @@ function MapView() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default MapView
