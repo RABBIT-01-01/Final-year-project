@@ -40,7 +40,7 @@ const LoginScreen = ({ navigation }) => {
 
     setIsLoading(true)
     try {
-      const response = await fetch('http://192.168.1.78:4000/api/users/login', {
+      const response = await fetch('http://192.168.48.70:4000/api/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -50,7 +50,7 @@ const LoginScreen = ({ navigation }) => {
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify({ email, password }),
       // })
-      alert("Response: " + JSON.stringify(response))
+      alert("Response: Login success ")
 
       const data = await response.json()
 

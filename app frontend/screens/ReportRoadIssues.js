@@ -19,7 +19,7 @@ import * as ImagePicker from "expo-image-picker"
 import { saveReport } from "./ReportStorage"
 
 const ReportRoadIssue = ({ navigation }) => {
-  const [title, setTitle] = useState("")
+  
   const [description, setDescription] = useState("")
   const [issueType, setIssueType] = useState("")
   const [severityLevel, setSeverityLevel] = useState("Low")
@@ -38,13 +38,13 @@ const ReportRoadIssue = ({ navigation }) => {
 
   // Update the handleFinish function to save the report
   const handleFinish = async () => {
-    if (!title || !description || !issueType || !location) {
+    if ( !description || !issueType || !location) {
       Alert.alert("Error", "Please fill in all required fields")
       return
     }
 
     const reportData = {
-      title,
+    
       description,
       issueType,
       severityLevel,
@@ -61,7 +61,7 @@ const ReportRoadIssue = ({ navigation }) => {
       Alert.alert("Success", "Road issue reported successfully!")
 
       // Reset form
-      setTitle("")
+     
       setDescription("")
       setIssueType("")
       setSeverityLevel("Low")
