@@ -1,23 +1,35 @@
 const Report = require("../models/report.model");
 
-exports.createReport = async (req, res, next) => {
-    try {
-        const { title, description, image, location, type } = req.body;
-        const report = new Report({
-            title,
-            description,
-            image,
-            location,
-            type,
-            reportedBy: req.user._id // Assuming req.user is populated with the authenticated user's info
-        });
+// const Report = require("../models/report.model");
 
-        await report.save();
-        res.status(201).json({ message: "Report created successfully", report });
-    } catch (error) {
-        next(error);
-    }
-}
+// Create a new report
+exports.createReport = async (req, res) => {
+  try {
+    const {
+      description,
+      image,
+      location,
+      coordinates,
+      severityLevel,
+      type,
+      status
+    } = req.body;
+
+    const report = new Report({
+      description,
+      image,
+      location,
+      coordinates,
+      severityLevel,
+      type,
+      status
+    });
+    const savedReport = await report.save();
+    res.status(201).json(savedReport);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 
 exports.getAllReports = async (req, res, next) => {
     try {
@@ -30,7 +42,11 @@ exports.getAllReports = async (req, res, next) => {
 
 exports.getReportById = async (req, res, next) => {
     try {
-        const report = await Report.findById(req.params.id).populate("reportedBy", "fullname email");
+        // console.log(req.params.id);
+        const userId = req.params.id;
+        console.log(userId);
+        const report = await Report.find({ reportedBy: userId }).populate("reportedBy", "fullname email");
+        // console.log(report);
         if (!report) {
             return res.status(404).json({ message: "Report not found" });
         }
@@ -42,19 +58,34 @@ exports.getReportById = async (req, res, next) => {
 
 exports.updateReport = async (req, res, next) => {
     try {
-        const { title, description, image, location, type } = req.body;
-        const report = await Report.findByIdAndUpdate(req.params.id, {
-            title,
+        const {
             description,
             image,
             location,
-            type
-        }, { new: true });
+            coordinates,
+            severityLevel,
+            type,
+            status
+        } = req.body;
 
-        if (!report) {
+        const updatedReport = await Report.findByIdAndUpdate(
+            req.params.id,
+            {
+                description,
+                image,
+                location,
+                coordinates,
+                severityLevel,
+                type,
+                status
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedReport) {
             return res.status(404).json({ message: "Report not found" });
         }
-        res.status(200).json({ message: "Report updated successfully", report });
+        res.status(200).json({ message: "Report updated successfully", report: updatedReport });
     } catch (error) {
         next(error);
     }

@@ -40,6 +40,7 @@ const LoginScreen = ({ navigation }) => {
 
     setIsLoading(true)
     try {
+      
       const response = await fetch('http://192.168.1.78:4000/api/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -50,6 +51,7 @@ const LoginScreen = ({ navigation }) => {
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify({ email, password }),
       // })
+      alert("Request sent to server")
       alert("Response: " + JSON.stringify(response))
 
       const data = await response.json()
@@ -92,7 +94,7 @@ const LoginScreen = ({ navigation }) => {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.appIcon}>🚧</Text>
-            <Text style={styles.appTitle}>Sadak 360</Text>
+            <Text style={styles.appTitle}>Sadak</Text>
             <Text style={styles.subtitle}>Sign in to your account</Text>
           </View>
 

@@ -17,7 +17,8 @@ import { CommonActions } from "@react-navigation/native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { getReports, clearAllReports } from "./ReportStorage"
 
-const USER_PROFILE_KEY = "@user_profile"
+// const USER_PROFILE_KEY = "@user_profile"
+const API_URL = "http://192.168.1.78:4000/api/users/profile"
 
 const UserProfile = ({ navigation }) => {
   const [profile, setProfile] = useState({
@@ -32,25 +33,67 @@ const UserProfile = ({ navigation }) => {
 
   const loadProfile = async () => {
     try {
-      const profileData = await AsyncStorage.getItem(USER_PROFILE_KEY)
-      if (profileData) {
-        setProfile(JSON.parse(profileData))
-      }
+    //   const profileData = await AsyncStorage.getItem(USER_PROFILE_KEY)
+    //   if (profileData) {
+    //     setProfile(JSON.parse(profileData))
+    //   }
+
+    //   // Load reports count
+    //   const reports = await getReports()
+    //   setReportsCount(reports.length)
+    // } catch (error) {
+    //   console.error("Error loading profile:", error)
+    // }
+
+
+     // Fetch user profile from API
+      const response = await fetch(API_URL)
+      if (!response.ok) throw new Error("Failed to fetch profile")
+      const data = await response.json()
+    alert("Response: " + JSON.stringify(data))
+      setProfile(prev => ({
+        ...prev,
+        name: data.fullname,
+        email: data.email,
+        phone: data.phone,
+      }))
 
       // Load reports count
       const reports = await getReports()
       setReportsCount(reports.length)
     } catch (error) {
       console.error("Error loading profile:", error)
+      Alert.alert("Error", "Unable to load profile data.")
     }
   }
 
   const saveProfile = async () => {
     try {
-      await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile))
+    //   await AsyncStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile))
+    //   setIsEditing(false)
+    //   Alert.alert("Success", "Profile updated successfully!")
+    // } catch (error) {
+    //   Alert.alert("Error", "Failed to save profile")
+    // }
+
+     // Send updated profile to API
+      const response = await fetch(API_URL, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fullname: profile.fullname,
+          email: profile.email,
+          phone: profile.phone,
+        }),
+      })
+      if (!response.ok) throw new Error("Failed to update profile")
+
       setIsEditing(false)
       Alert.alert("Success", "Profile updated successfully!")
     } catch (error) {
+      console.error("Error saving profile:", error)
       Alert.alert("Error", "Failed to save profile")
     }
   }
@@ -88,7 +131,7 @@ const UserProfile = ({ navigation }) => {
         onPress: async () => {
           try {
             await clearAllReports()
-            await AsyncStorage.removeItem(USER_PROFILE_KEY)
+            // await AsyncStorage.removeItem(USER_PROFILE_KEY)
             setProfile({
               name: "",
               email: "",

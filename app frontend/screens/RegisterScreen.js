@@ -146,14 +146,14 @@ const RegisterScreen = ({ navigation }) => {
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity> */}
             <Text style={styles.appIcon}>🚧</Text>
-            <Text style={styles.appTitle}>Create Acc</Text>
+            <Text style={styles.appTitle}>Create Account</Text>
             <Text style={styles.subtitle}>Join Sadak360</Text>
           </View>
 
           {/* Registration Form */}
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Full Name</Text>
+              <Text style={styles.label}>Full Name</Text> 
               <TextInput
                 style={styles.input}
                 placeholder="Enter your full name"

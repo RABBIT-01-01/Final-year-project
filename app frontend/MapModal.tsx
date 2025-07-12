@@ -1,12 +1,87 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Modal, View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from "react-native"
 import { WebView } from "react-native-webview"
+import * as Location from "expo-location"
 
 const MapModal = ({ visible, onClose, onLocationSelect, initialLocation }) => {
   const webViewRef = useRef(null)
   const [selectedLocation, setSelectedLocation] = useState(null)
+  const [currentLocation, setCurrentLocation] = useState(null)
+  const [locationPermission, setLocationPermission] = useState(null)
+
+  // Request location permissions when modal opens
+  useEffect(() => {
+    if (visible) {
+      requestLocationPermission()
+    }
+  }, [visible])
+
+  const requestLocationPermission = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      setLocationPermission(status === "granted")
+
+      if (status !== "granted") {
+        Alert.alert(
+          "Location Permission Required",
+          "Please enable location permissions in your device settings to use this feature.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Location.requestForegroundPermissionsAsync() },
+          ],
+        )
+      }
+    } catch (error) {
+      console.error("Error requesting location permission:", error)
+      setLocationPermission(false)
+    }
+  }
+
+  const getCurrentLocation = async () => {
+    if (!locationPermission) {
+      Alert.alert("Location Permission Denied", "Please enable location permissions in your device settings.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Request Permission", onPress: requestLocationPermission },
+      ])
+      return
+    }
+
+    try {
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+        timeInterval: 10000,
+        distanceInterval: 10,
+      })
+
+      const locationData = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        accuracy: location.coords.accuracy,
+      }
+
+      setCurrentLocation(locationData)
+
+      // Send location to WebView using injectedJavaScript
+      const jsCode = `
+        if (typeof setCurrentLocationFromNative === 'function') {
+          setCurrentLocationFromNative(${locationData.latitude}, ${locationData.longitude}, ${locationData.accuracy});
+        }
+        true; // Required for injectedJavaScript
+      `
+
+      if (webViewRef.current) {
+        webViewRef.current.injectJavaScript(jsCode)
+      }
+    } catch (error) {
+      console.error("Error getting current location:", error)
+      Alert.alert(
+        "Location Error",
+        "Failed to get your current location. Please make sure location services are enabled and try again.",
+      )
+    }
+  }
 
   const mapHTML = `
     <!DOCTYPE html>
@@ -138,19 +213,18 @@ const MapModal = ({ visible, onClose, onLocationSelect, initialLocation }) => {
                 </button>
             </div>
         </div>
+
         <script>
             // Initialize map with default view
             var map = L.map('map').setView([27.7089, 85.3206], 14);
             
             // Add OpenStreetMap tiles
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
             }).addTo(map);
             
             var marker = null;
             var currentLocationMarker = null;
             var isDragging = false;
-            var isGettingLocation = false;
             var initialPromptShown = true;
             
             // Custom draggable pin icon
@@ -201,29 +275,35 @@ const MapModal = ({ visible, onClose, onLocationSelect, initialLocation }) => {
                         var address = data.display_name || 'Selected Location';
                         
                         // Send data back to React Native
-                        window.ReactNativeWebView.postMessage(JSON.stringify({
-                            type: 'locationSelected',
-                            latitude: lat,
-                            longitude: lng,
-                            address: address,
-                            isGPS: isGPS,
-                            accuracy: accuracy
-                        }));
+                        if (window.ReactNativeWebView) {
+                            window.ReactNativeWebView.postMessage(JSON.stringify({
+                                type: 'locationSelected',
+                                latitude: lat,
+                                longitude: lng,
+                                address: address,
+                                isGPS: isGPS,
+                                accuracy: accuracy
+                            }));
+                        }
                     })
                     .catch(error => {
                         console.error('Geocoding error:', error);
-                        window.ReactNativeWebView.postMessage(JSON.stringify({
-                            type: 'locationSelected',
-                            latitude: lat,
-                            longitude: lng,
-                            address: 'Selected Location',
-                            isGPS: isGPS,
-                            accuracy: accuracy
-                        }));
+                        if (window.ReactNativeWebView) {
+                            window.ReactNativeWebView.postMessage(JSON.stringify({
+                                type: 'locationSelected',
+                                latitude: lat,
+                                longitude: lng,
+                                address: 'Selected Location',
+                                isGPS: isGPS,
+                                accuracy: accuracy
+                            }));
+                        }
                     });
             }
             
             function addDraggableMarker(lat, lng, isGPS = false, accuracy = null) {
+                console.log('Adding marker at:', lat, lng, 'isGPS:', isGPS, 'accuracy:', accuracy);
+                
                 // Remove existing marker
                 if (marker) {
                     map.removeLayer(marker);
@@ -234,6 +314,8 @@ const MapModal = ({ visible, onClose, onLocationSelect, initialLocation }) => {
                     icon: draggableIcon,
                     draggable: true
                 }).addTo(map);
+                
+                console.log('Marker added successfully');
                 
                 // Update location info
                 updateLocationInfo(lat, lng, isGPS, accuracy);
@@ -258,140 +340,35 @@ const MapModal = ({ visible, onClose, onLocationSelect, initialLocation }) => {
                 reverseGeocode(lat, lng, isGPS, accuracy);
             }
             
-            function getCurrentLocation() {
-                if (isGettingLocation) return;
+            // Function to be called from React Native
+            window.setCurrentLocationFromNative = function(lat, lng, accuracy) {
+                console.log('Received location from native:', lat, lng, accuracy);
                 
-                var btn = document.getElementById('currentLocationBtn');
-                btn.disabled = true;
-                btn.innerHTML = '⏳';
-                isGettingLocation = true;
-                
-                // Check if geolocation is supported
-                if (!navigator.geolocation) {
-                    alert('Geolocation is not supported by this device/browser.');
-                    btn.disabled = false;
-                    btn.innerHTML = '🎯';
-                    isGettingLocation = false;
-                    return;
+                // Remove existing current location marker
+                if (currentLocationMarker) {
+                    map.removeLayer(currentLocationMarker);
                 }
                 
-                // First check if location services are available
-                navigator.permissions.query({name: 'geolocation'}).then(function(result) {
-                    if (result.state === 'denied') {
-                        alert('Location access is denied. Please enable location permissions in your device settings and refresh the page.');
-                        btn.disabled = false;
-                        btn.innerHTML = '🎯';
-                        isGettingLocation = false;
-                        return;
-                    }
-                    
-                    // Proceed with getting location
-                    navigator.geolocation.getCurrentPosition(
-                        function(position) {
-                            var lat = position.coords.latitude;
-                            var lng = position.coords.longitude;
-                            var accuracy = position.coords.accuracy;
-                            
-                            // Remove existing current location marker
-                            if (currentLocationMarker) {
-                                map.removeLayer(currentLocationMarker);
-                            }
-                            
-                            // Set map view to current location
-                            map.setView([lat, lng], 18);
-                            
-                            // Add current location marker (non-draggable, for reference)
-                            currentLocationMarker = L.marker([lat, lng], {
-                                icon: currentLocationIcon
-                            }).addTo(map);
-                            
-                            currentLocationMarker.bindPopup('Your current location (±' + Math.round(accuracy) + 'm)').openPopup();
-                            
-                            // Add draggable marker at current location for fine-tuning
-                            addDraggableMarker(lat, lng, true, accuracy);
-                            
-                            // Hide initial prompt
-                            hideInitialPrompt();
-                            
-                            btn.disabled = false;
-                            btn.innerHTML = '🎯';
-                            isGettingLocation = false;
-                        },
-                        function(error) {
-                            console.log('Geolocation error:', error);
-                            var errorMessage = 'Failed to get current location. ';
-                            
-                            switch(error.code) {
-                                case error.PERMISSION_DENIED:
-                                    errorMessage += 'Location access was denied. Please enable location permissions in your device settings.';
-                                    break;
-                                case error.POSITION_UNAVAILABLE:
-                                    errorMessage += 'Location information is unavailable. Please check your GPS/network connection.';
-                                    break;
-                                case error.TIMEOUT:
-                                    errorMessage += 'Location request timed out. Please try again.';
-                                    break;
-                                default:
-                                    errorMessage += 'An unknown error occurred. Please try again.';
-                                    break;
-                            }
-                            
-                            alert(errorMessage);
-                            btn.disabled = false;
-                            btn.innerHTML = '🎯';
-                            isGettingLocation = false;
-                        },
-                        {
-                            enableHighAccuracy: true,
-                            timeout: 30000,  // Increased timeout to 30 seconds
-                            maximumAge: 10000  // Allow cached location up to 10 seconds old
-                        }
-                    );
-                }).catch(function(error) {
-                    console.log('Permission query error:', error);
-                    // Fallback: try to get location anyway
-                    navigator.geolocation.getCurrentPosition(
-                        function(position) {
-                            var lat = position.coords.latitude;
-                            var lng = position.coords.longitude;
-                            var accuracy = position.coords.accuracy;
-                            
-                            if (currentLocationMarker) {
-                                map.removeLayer(currentLocationMarker);
-                            }
-                            
-                            map.setView([lat, lng], 18);
-                            
-                            currentLocationMarker = L.marker([lat, lng], {
-                                icon: currentLocationIcon
-                            }).addTo(map);
-                            
-                            currentLocationMarker.bindPopup('Your current location (±' + Math.round(accuracy) + 'm)').openPopup();
-                            addDraggableMarker(lat, lng, true, accuracy);
-                            hideInitialPrompt();
-                            
-                            btn.disabled = false;
-                            btn.innerHTML = '🎯';
-                            isGettingLocation = false;
-                        },
-                        function(error) {
-                            alert('Location access failed. Please ensure location services are enabled and try again.');
-                            btn.disabled = false;
-                            btn.innerHTML = '🎯';
-                            isGettingLocation = false;
-                        },
-                        {
-                            enableHighAccuracy: true,
-                            timeout: 30000,
-                            maximumAge: 10000
-                        }
-                    );
-                });
-            }
+                // Set map view to current location
+                map.setView([lat, lng], 18);
+                
+                // Add current location marker (non-draggable, for reference)
+                currentLocationMarker = L.marker([lat, lng], {
+                    icon: currentLocationIcon
+                }).addTo(map);
+                
+                currentLocationMarker.bindPopup('Your current location (±' + Math.round(accuracy) + 'm)').openPopup();
+                
+                // Add draggable marker at current location for fine-tuning
+                addDraggableMarker(lat, lng, true, accuracy);
+                
+                // Hide initial prompt
+                hideInitialPrompt();
+            };
             
             // Handle map clicks
             map.on('click', function(e) {
-                if (isDragging || isGettingLocation) return;
+                if (isDragging) return;
                 
                 var lat = e.latlng.lat;
                 var lng = e.latlng.lng;
@@ -404,11 +381,25 @@ const MapModal = ({ visible, onClose, onLocationSelect, initialLocation }) => {
                 addDraggableMarker(lat, lng);
             });
             
-            // Current location button handler
-            document.getElementById('currentLocationBtn').addEventListener('click', getCurrentLocation);
+            // Current location button handler - sends message to React Native
+            document.getElementById('currentLocationBtn').addEventListener('click', function() {
+                console.log('Current location button clicked');
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                        type: 'requestCurrentLocation'
+                    }));
+                }
+            });
             
             // Initial prompt button handlers
-            document.getElementById('useCurrentLocationBtn').addEventListener('click', getCurrentLocation);
+            document.getElementById('useCurrentLocationBtn').addEventListener('click', function() {
+                console.log('Use current location button clicked');
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                        type: 'requestCurrentLocation'
+                    }));
+                }
+            });
             
             document.getElementById('selectManuallyBtn').addEventListener('click', function() {
                 hideInitialPrompt();
@@ -428,6 +419,8 @@ const MapModal = ({ visible, onClose, onLocationSelect, initialLocation }) => {
                 // Add draggable marker at initial location
                 addDraggableMarker(initialLat, initialLng, true);
             }
+            
+            console.log('Map initialized successfully');
         </script>
     </body>
     </html>
@@ -436,6 +429,8 @@ const MapModal = ({ visible, onClose, onLocationSelect, initialLocation }) => {
   const handleWebViewMessage = (event) => {
     try {
       const data = JSON.parse(event.nativeEvent.data)
+      console.log("Received message from WebView:", data)
+
       if (data.type === "locationSelected") {
         setSelectedLocation({
           latitude: data.latitude,
@@ -444,6 +439,9 @@ const MapModal = ({ visible, onClose, onLocationSelect, initialLocation }) => {
           isGPS: data.isGPS,
           accuracy: data.accuracy,
         })
+      } else if (data.type === "requestCurrentLocation") {
+        console.log("Location request received from WebView")
+        getCurrentLocation()
       }
     } catch (error) {
       console.error("Error parsing WebView message:", error)
@@ -474,7 +472,6 @@ const MapModal = ({ visible, onClose, onLocationSelect, initialLocation }) => {
             <Text style={styles.confirmButton}>Confirm</Text>
           </TouchableOpacity>
         </View>
-
         <WebView
           ref={webViewRef}
           source={{ html: mapHTML }}
@@ -483,8 +480,11 @@ const MapModal = ({ visible, onClose, onLocationSelect, initialLocation }) => {
           javaScriptEnabled={true}
           domStorageEnabled={true}
           geolocationEnabled={true}
+          allowsInlineMediaPlayback={true}
+          mediaPlaybackRequiresUserAction={false}
+          onLoadEnd={() => console.log("WebView loaded")}
+          onError={(error) => console.error("WebView error:", error)}
         />
-
         {selectedLocation && (
           <View style={styles.locationInfo}>
             <Text style={styles.locationText} numberOfLines={2}>
@@ -568,4 +568,3 @@ const styles = StyleSheet.create({
 })
 
 export default MapModal
-
