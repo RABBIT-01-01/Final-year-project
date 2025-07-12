@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useCallback } from "react"
+
+import { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,37 +12,93 @@ import {
   Image,
   Alert,
   RefreshControl,
-} from "react-native"
-import { useFocusEffect } from "@react-navigation/native"
-import { getReports, deleteReport, clearAllReports } from "./ReportStorage"
+  ActivityIndicator,
+} from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 const PreviousReports = ({ navigation }) => {
-  const [reports, setReports] = useState([])
-  const [refreshing, setRefreshing] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [reports, setReports] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
+
+  const getUserId = async () => {
+    try {
+      const response = await fetch("http://192.168.1.78:4000/api/users/profile");
+      if (!response.ok) throw new Error("Failed to fetch user profile");
+      const userData = await response.json();
+      return userData._id;
+    } catch (error) {
+      Alert.alert("Error", "Failed to get user profile");
+      throw error;
+    }
+  };
 
   const loadReports = async () => {
     try {
-      const savedReports = await getReports()
-      setReports(savedReports)
+      setLoading(true);
+
+      // Get user ID first
+      let id = userId;
+      if (!id) {
+        id = await getUserId();
+        setUserId(id);
+      }
+
+      // Fetch reports for this user
+      const response = await fetch(`http://192.168.1.78:4000/api/requests/${id}`);
+      if (!response.ok) throw new Error("Failed to fetch reports");
+
+      const fetchedReports = await response.json();
+      console.log("Fetched reports:", fetchedReports);
+      setReports(fetchedReports);
     } catch (error) {
-      Alert.alert("Error", "Failed to load reports")
+      Alert.alert("Error", "Failed to load reports");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const onRefresh = async () => {
-    setRefreshing(true)
-    await loadReports()
-    setRefreshing(false)
-  }
+    setRefreshing(true);
+    await loadReports();
+    setRefreshing(false);
+  };
 
   useFocusEffect(
     useCallback(() => {
-      loadReports()
-    }, []),
-  )
+      loadReports();
+    }, [])
+  );
+
+  const handleClearAllReports = () => {
+    if (reports.length === 0) return;
+
+    Alert.alert(
+      "Clear All Reports",
+      "Are you sure you want to delete all reports? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear All",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `http://192.168.1.78:4000/api/requests/clear-all/${userId}`,
+                { method: "DELETE" }
+              );
+              if (!response.ok) throw new Error("Failed to clear all reports");
+              setReports([]);
+              Alert.alert("Success", "All reports cleared successfully");
+            } catch (error) {
+              Alert.alert("Error", "Failed to clear reports");
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const handleDeleteReport = (reportId, title) => {
     Alert.alert("Delete Report", `Are you sure you want to delete "${title}"?`, [
@@ -51,68 +108,55 @@ const PreviousReports = ({ navigation }) => {
         style: "destructive",
         onPress: async () => {
           try {
-            await deleteReport(reportId)
-            await loadReports()
-            Alert.alert("Success", "Report deleted successfully")
+            const response = await fetch(
+              `http://192.168.1.78:4000/api/requests/${reportId}`,
+              { method: "DELETE" }
+            );
+            if (!response.ok) throw new Error("Failed to delete report");
+            await loadReports();
+            Alert.alert("Success", "Report deleted successfully");
           } catch (error) {
-            Alert.alert("Error", "Failed to delete report")
+            Alert.alert("Error", "Failed to delete report");
           }
         },
       },
-    ])
-  }
-
-  const handleClearAllReports = () => {
-    if (reports.length === 0) return
-
-    Alert.alert("Clear All Reports", "Are you sure you want to delete all reports? This action cannot be undone.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Clear All",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await clearAllReports()
-            setReports([])
-            Alert.alert("Success", "All reports cleared successfully")
-          } catch (error) {
-            Alert.alert("Error", "Failed to clear reports")
-          }
-        },
-      },
-    ])
-  }
+    ]);
+  };
 
   const formatDate = (timestamp) => {
-    const date = new Date(timestamp)
-    return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-  }
+    const date = new Date(timestamp);
+    return (
+      date.toLocaleDateString() +
+      " " +
+      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    );
+  };
 
   const getSeverityColor = (severity) => {
     switch (severity) {
       case "High":
-        return "#F44336"
+        return "#F44336";
       case "Medium":
-        return "#FF9800"
+        return "#FF9800";
       case "Low":
-        return "#4CAF50"
+        return "#4CAF50";
       default:
-        return "#666"
+        return "#666";
     }
-  }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
       case "Submitted":
-        return "#007AFF"
+        return "#007AFF";
       case "In Progress":
-        return "#FF9800"
+        return "#FF9800";
       case "Resolved":
-        return "#4CAF50"
+        return "#4CAF50";
       default:
-        return "#666"
+        return "#666";
     }
-  }
+  };
 
   const ReportCard = ({ report }) => (
     <View style={styles.reportCard}>
@@ -122,15 +166,28 @@ const PreviousReports = ({ navigation }) => {
             {report.title}
           </Text>
           <View style={styles.badgeContainer}>
-            <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(report.severityLevel) }]}>
+            <View
+              style={[
+                styles.severityBadge,
+                { backgroundColor: getSeverityColor(report.severityLevel) },
+              ]}
+            >
               <Text style={styles.badgeText}>{report.severityLevel}</Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(report.status) }]}>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: getStatusColor(report.status) },
+              ]}
+            >
               <Text style={styles.badgeText}>{report.status}</Text>
             </View>
           </View>
         </View>
-        <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteReport(report.id, report.title)}>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteReport(report._id, report.title)}
+        >
           <Text style={styles.deleteButtonText}>✕</Text>
         </TouchableOpacity>
       </View>
@@ -149,19 +206,23 @@ const PreviousReports = ({ navigation }) => {
 
       {report.coordinates && (
         <Text style={styles.coordinatesText}>
-          {report.coordinates.latitude.toFixed(6)}, {report.coordinates.longitude.toFixed(6)}
+          {report.coordinates.latitude},{" "}
+          {report.coordinates.longitude}
         </Text>
       )}
 
       {report.image && (
         <View style={styles.imageContainer}>
-          <Image source={{ uri: report.image.uri }} style={styles.reportImage} />
+          <Image
+            source={{ uri: report.image.uri }}
+            style={styles.reportImage}
+          />
         </View>
       )}
 
       <Text style={styles.timestamp}>{formatDate(report.timestamp)}</Text>
     </View>
-  )
+  );
 
   if (loading) {
     return (
@@ -174,21 +235,29 @@ const PreviousReports = ({ navigation }) => {
           <View style={styles.headerRight} />
         </View>
         <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
           <Text style={styles.loadingText}>Loading reports...</Text>
         </View>
       </SafeAreaView>
-    )
+    );
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        {/* <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity> */}
         <Text style={styles.headerTitle}>Previous Reports</Text>
-        <TouchableOpacity onPress={handleClearAllReports} disabled={reports.length === 0}>
-          <Text style={[styles.clearAllButton, reports.length === 0 && styles.clearAllButtonDisabled]}>Clear All</Text>
+        <TouchableOpacity
+          onPress={handleClearAllReports}
+          disabled={reports.length === 0}
+        >
+          <Text
+            style={[
+              styles.clearAllButton,
+              reports.length === 0 && styles.clearAllButtonDisabled,
+            ]}
+          >
+            Clear All
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -197,17 +266,25 @@ const PreviousReports = ({ navigation }) => {
           <Text style={styles.emptyIcon}>📋</Text>
           <Text style={styles.emptyTitle}>No Reports Yet</Text>
           <Text style={styles.emptyDescription}>
-            Your submitted road issue reports will appear here. Start by creating your first report!
+            Your submitted road issue reports will appear here. Start by
+            creating your first report!
           </Text>
-          <TouchableOpacity style={styles.createReportButton} onPress={() => navigation.navigate("ReportRoadIssue")}>
-            <Text style={styles.createReportButtonText}>Create First Report</Text>
+          <TouchableOpacity
+            style={styles.createReportButton}
+            onPress={() => navigation.navigate("ReportRoadIssue")}
+          >
+            <Text style={styles.createReportButtonText}>
+              Create First Report
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (
         <ScrollView
           style={styles.content}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
           <View style={styles.statsContainer}>
             <Text style={styles.statsText}>
@@ -216,15 +293,15 @@ const PreviousReports = ({ navigation }) => {
           </View>
 
           {reports.map((report) => (
-            <ReportCard key={report.id} report={report} />
+            <ReportCard key={report._id} report={report} />
           ))}
 
           <View style={styles.bottomPadding} />
         </ScrollView>
       )}
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
