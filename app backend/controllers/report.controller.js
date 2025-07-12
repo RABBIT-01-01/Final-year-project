@@ -11,7 +11,7 @@ exports.createReport = async (req, res) => {
       location,
       coordinates,
       severityLevel,
-      type,
+      issueType,
       status
     } = req.body;
 
@@ -21,9 +21,11 @@ exports.createReport = async (req, res) => {
       location,
       coordinates,
       severityLevel,
-      type,
-      status
+      issueType,
+      status,
+      reportedBy: req.user._id // Assuming req.user is set by auth middleware
     });
+    console.log("Report data:", report);
     const savedReport = await report.save();
     res.status(201).json(savedReport);
   } catch (error) {
@@ -64,7 +66,7 @@ exports.updateReport = async (req, res, next) => {
             location,
             coordinates,
             severityLevel,
-            type,
+            issueType,
             status
         } = req.body;
 
@@ -76,7 +78,7 @@ exports.updateReport = async (req, res, next) => {
                 location,
                 coordinates,
                 severityLevel,
-                type,
+                issueType,
                 status
             },
             { new: true, runValidators: true }

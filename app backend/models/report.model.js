@@ -11,8 +11,8 @@ const reportSchema = new mongoose.Schema({
     latitude: { type: String, required: true },
     longitude: { type: String, required: true }
   },
-  severityLevel: { type: String, enum: ["low", "medium", "high"], default: "medium" },
-  type: { type: String, enum: ["pothole", "blockage", "hazard", "stopage"] ,default: "blockage" },
+  severityLevel: { type: String, enum: ["Low", "Medium", "High"] },
+  issueType: { type: String, enum: ["Pothole", "Road Damage", "Traffic Light Issue", "Sign Problem", "Debris on Road", "Other"], default: "Other" },
   status: { type: String, enum: ["pending", "verified", "solved"], default: "pending" },
   reportedBy: {
     type: mongoose.Schema.Types.ObjectId,
