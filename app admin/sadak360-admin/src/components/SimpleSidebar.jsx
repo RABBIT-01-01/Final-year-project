@@ -3,9 +3,12 @@
 import { useState } from "react"
 import { NavLink } from "react-router-dom"
 import { Menu, X, AlertTriangle } from 'lucide-react'
+import { useAuth } from "./auth-provider"
+import { User, LogOut } from 'lucide-react'
 
 function SimpleSidebar({ navigation, children }) {
   const [isOpen, setIsOpen] = useState(false)
+  const { user, logout } = useAuth()
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -78,6 +81,21 @@ function SimpleSidebar({ navigation, children }) {
           <h1 className="text-lg font-semibold text-gray-900">
             {navigation.find((item) => location.pathname === item.href)?.title || "Dashboard"}
           </h1>
+
+
+           <div className="top-bar-right">
+            <div className="user-info">
+              <User size={20} />
+              <span>{user?.name}</span>
+            </div>
+            <button className="logout-button" onClick={logout}>
+              <LogOut size={16} />
+              Logout
+            </button>
+          </div>
+
+
+
           <div className="w-6 lg:hidden"></div> {/* Spacer for mobile */}
         </header>
 

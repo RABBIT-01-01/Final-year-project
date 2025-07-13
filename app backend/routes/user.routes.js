@@ -7,7 +7,9 @@ const authMiddleware = require('../middlewares/auth.middleware');
 router.post('/register', [
     body('fullname').isLength({min:3}).withMessage('Full name is required'),
     body('email').isEmail().withMessage('Please enter a valid email address'),
-    body('phone').isLength({min:10}).withMessage('Phone number must be at least 10 characters long'),
+    body('phone')
+    .matches(/^9[87]\d{8}$/)
+    .withMessage('Phone number must start with 98 or 97 and be 10 digits long'),
     body('logUser').isIn(['user', 'admin']).withMessage('User type must be either user or admin'),
     body('password').isLength({min:6}).withMessage('Password must be at least 6 characters long'),
 ], userController.registerUser);

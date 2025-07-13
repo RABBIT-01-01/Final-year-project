@@ -50,7 +50,7 @@ const UserProfile = ({ navigation }) => {
       const response = await fetch(API_URL)
       if (!response.ok) throw new Error("Failed to fetch profile")
       const data = await response.json()
-    alert("Response: " + JSON.stringify(data))
+    // alert("Response: " + JSON.stringify(data))
       setProfile(prev => ({
         ...prev,
         name: data.fullname,

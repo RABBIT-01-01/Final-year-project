@@ -4,18 +4,31 @@ import Dashboard from "./pages/Dashboard"
 import MapView from "./pages/MapView"
 import Analytics from "./pages/Analytics"
 import BrowseHazards from "./pages/BrowseHazards"
+import Login from "./components/Login"
+import { AuthProvider } from "./components/auth-provider"
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function AppRouter() {
   return (
-    <Routes>
-      <Route path="/" element={<AdminLayout />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="map" element={<MapView />} />
-        <Route path="analytics" element={<Analytics />} />
-        <Route path="hazards" element={<BrowseHazards />} />
-      </Route>
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Login />} />
+
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="map" element={<MapView />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="hazards" element={<BrowseHazards />} />
+        </Route>
+      </Routes>
+    </AuthProvider>
   )
 }
 
