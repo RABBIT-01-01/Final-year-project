@@ -4,104 +4,58 @@ import { useState, useEffect, useMemo } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { Search, MapPin, Calendar, User, Eye, ChevronDown } from "lucide-react"
 
-const hazards = [
-  {
-    id: "HAZ-001",
-    type: "Pothole",
-    description: "Large pothole on MG Road causing vehicle damage and traffic slowdown",
-    severity: "High",
-    status: "Pending",
-    location: "MG Road, Sector 14, Near Metro Station",
-    coordinates: "28.6139, 77.2090",
-    reporter: "John Doe",
-    timestamp: "2024-01-15T10:30:00Z",
-    image: "/placeholder.svg?height=200&width=300",
-    assignedTo: "Team Alpha",
-    estimatedResolution: "2024-01-17T10:00:00Z",
-  },
-  {
-    id: "HAZ-002",
-    type: "Debris",
-    description: "Construction debris blocking traffic lane, creating safety hazard",
-    severity: "Medium",
-    status: "In Progress",
-    location: "Ring Road, Phase 2, Construction Zone",
-    coordinates: "28.6129, 77.2295",
-    reporter: "Jane Smith",
-    timestamp: "2024-01-15T09:15:00Z",
-    image: "/placeholder.svg?height=200&width=300",
-    assignedTo: "Team Beta",
-    estimatedResolution: "2024-01-16T15:00:00Z",
-  },
-  {
-    id: "HAZ-003",
-    type: "Water Logging",
-    description: "Severe water logging after heavy rain, road impassable",
-    severity: "High",
-    status: "Resolved",
-    location: "City Center Mall, Main Entrance",
-    coordinates: "28.6169, 77.2295",
-    reporter: "Mike Johnson",
-    timestamp: "2024-01-15T08:45:00Z",
-    image: "/placeholder.svg?height=200&width=300",
-    assignedTo: "Team Gamma",
-    resolvedAt: "2024-01-15T14:30:00Z",
-  },
-  {
-    id: "HAZ-004",
-    type: "Road Crack",
-    description: "Minor crack developing in road surface, needs monitoring",
-    severity: "Low",
-    status: "Pending",
-    location: "Highway 1, KM 45, Service Lane",
-    coordinates: "28.6189, 77.2190",
-    reporter: "Sarah Wilson",
-    timestamp: "2024-01-15T07:20:00Z",
-    image: "/placeholder.svg?height=200&width=300",
-    assignedTo: null,
-    estimatedResolution: null,
-  },
-  {
-    id: "HAZ-005",
-    type: "Broken Streetlight",
-    description: "Streetlight not working, creating safety hazard during night",
-    severity: "Medium",
-    status: "In Progress",
-    location: "Park Avenue, Block C, Residential Area",
-    coordinates: "28.6209, 77.2150",
-    reporter: "David Brown",
-    timestamp: "2024-01-14T22:10:00Z",
-    image: "/placeholder.svg?height=200&width=300",
-    assignedTo: "Team Delta",
-    estimatedResolution: "2024-01-16T18:00:00Z",
-  },
-  {
-    id: "HAZ-006",
-    type: "Manhole Cover Missing",
-    description: "Open manhole without cover, extremely dangerous for vehicles",
-    severity: "High",
-    status: "Pending",
-    location: "Industrial Area, Sector 8, Main Road",
-    coordinates: "28.6099, 77.2250",
-    reporter: "Lisa Anderson",
-    timestamp: "2024-01-14T16:45:00Z",
-    image: "/placeholder.svg?height=200&width=300",
-    assignedTo: "Team Alpha",
-    estimatedResolution: "2024-01-16T12:00:00Z",
-  },
-]
-
 function BrowseHazards() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
 
-  const [filteredHazards, setFilteredHazards] = useState(hazards)
+  const [hazards, setHazards] = useState([]) // From API
+  const [filteredHazards, setFilteredHazards] = useState([])
   const [activeTab, setActiveTab] = useState("all")
   const [dropdownStates, setDropdownStates] = useState({
     type: false,
     severity: false,
     status: false,
   })
+
+  // ✅ Fetch hazard data from API
+  useEffect(() => {
+    const fetchHazards = async () => {
+      try {
+        const response = await fetch("http://localhost:4000/api/requests/", {
+          credentials: "include",
+        })
+        if (response.ok) {
+          const data = await response.json()
+          console.log("Fetched hazards:", data)
+
+          // Map API data to UI model
+          const formatted = data.map((item) => ({
+            id: item._id,
+            type: item.issueType,
+            description: item.description,
+            severity: item.severityLevel,
+            status: item.status.charAt(0).toUpperCase() + item.status.slice(1), // e.g. "pending" -> "Pending"
+            location: item.location,
+            coordinates: `${item.coordinates.latitude}, ${item.coordinates.longitude}`,
+            reporter: item.reportedBy.fullname,
+            timestamp: item.createdAt,
+            image: item.image || "/placeholder.svg?height=200&width=300", // fallback image
+            assignedTo: item.maintainance_team, // API doesn’t provide this
+            estimatedResolution: null, // API doesn’t provide this
+          }))
+
+          setHazards(formatted)
+          setFilteredHazards(formatted)
+        } else {
+          console.error("Failed to fetch hazards:", response.statusText)
+        }
+      } catch (error) {
+        console.error("Error fetching hazards:", error)
+      }
+    }
+
+    fetchHazards()
+  }, [])
 
   // Get URL parameters
   const searchTerm = searchParams.get("search") || ""
@@ -134,6 +88,7 @@ function BrowseHazards() {
     }))
   }
 
+  // ✅ Filter hazards when search/filter changes
   useEffect(() => {
     let filtered = hazards
 
@@ -159,7 +114,7 @@ function BrowseHazards() {
     }
 
     setFilteredHazards(filtered)
-  }, [searchTerm, typeFilter, severityFilter, statusFilter])
+  }, [searchTerm, typeFilter, severityFilter, statusFilter, hazards])
 
   const getSeverityColor = (severity) => {
     switch (severity) {
@@ -215,12 +170,10 @@ function BrowseHazards() {
 
   const typeOptions = [
     { value: "all", label: "All Types" },
-    { value: "pothole", label: "Pothole" },
-    { value: "debris", label: "Debris" },
-    { value: "water logging", label: "Water Logging" },
-    { value: "road crack", label: "Road Crack" },
-    { value: "broken streetlight", label: "Broken Streetlight" },
-    { value: "manhole cover missing", label: "Manhole Cover Missing" },
+    ...Array.from(new Set(hazards.map((h) => h.type.toLowerCase()))).map((type) => ({
+      value: type,
+      label: type.charAt(0).toUpperCase() + type.slice(1),
+    })),
   ]
 
   const severityOptions = [
@@ -240,7 +193,17 @@ function BrowseHazards() {
   const renderHazardCard = (hazard) => (
     <div key={hazard.id} className="hazard-card">
       <div className="hazard-image">
-        <img src={hazard.image || "/placeholder.svg"} alt={hazard.type} className="w-full h-full object-cover" />
+        <img
+            src={
+              hazard.image
+                ?` http://localhost:4000/api/${hazard.image.replace(/^\//, "")}`
+                : "/placeholder.svg"
+            }
+            alt={hazard.type}
+            className="w-full h-full object-cover"
+          />
+
+        
         <div className="hazard-badges">
           <span className={getSeverityColor(hazard.severity)}>{hazard.severity}</span>
           <span className={getStatusColor(hazard.status)}>{hazard.status}</span>
@@ -266,21 +229,20 @@ function BrowseHazards() {
           <User className="h-4 w-4 text-gray-500" />
           <span>Reported by {hazard.reporter}</span>
         </div>
-        {hazard.assignedTo && (
-          <div className="text-sm">
-            <span className="font-medium">Assigned to:</span> {hazard.assignedTo}
-          </div>
-        )}
+        <div className="flex items-center gap-2 text-sm">
+          <User className="h-4 w-4 text-gray-500" />
+          <span>Assigned to {hazard.assignedTo}</span>
+        </div>
         <div className="flex gap-2 pt-2">
           <button className="btn btn-primary flex-1 btn-sm" onClick={() => handleViewDetails(hazard.id)}>
             <Eye className="h-4 w-4 mr-2" />
             View Details
           </button>
-          <button className="btn btn-secondary btn-sm">Edit</button>
         </div>
       </div>
     </div>
   )
+
 
   return (
     <div className="browse-hazards-container">

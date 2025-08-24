@@ -11,59 +11,105 @@ export function AuthProvider({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ✅ Check if user is already logged in (session persisted on backend)
   useEffect(() => {
-    // Check for stored auth token
-    const token = localStorage.getItem("auth-token");
-    const userData = localStorage.getItem("user-data");
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("http://localhost:4000/api/users/profile", {
+          credentials: "include", // Send cookies
+        });
 
-    if (token && userData) {
-      setUser(JSON.parse(userData));
-    }
-    setIsLoading(false);
+        if (response.ok) {
+          const data = await response.json();
+          console.log("User session:", data);
+          setUser(data); // Assuming API returns { user }
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user session:", error);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUser();
   }, []);
 
+  // ✅ Redirect based on auth state
   useEffect(() => {
     if (!isLoading) {
       const isLoginPage = location.pathname === "/";
-      const isAdminPage = location.pathname.startsWith("/");
+      const isProtectedPage = location.pathname.startsWith("/");
 
-      if (!user && isAdminPage) {
-        navigate("/");
+      if (!user && isProtectedPage) {
+        navigate("/"); // Redirect to login if not logged in
       } else if (user && isLoginPage) {
-        navigate("/dashboard");
+        navigate("/dashboard"); // Redirect to dashboard if already logged in
       }
     }
   }, [user, location.pathname, isLoading, navigate]);
 
-  const login = async (email, password) => {
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+// ✅ Login
+const login = async (email, password) => {
+  try {
+    const response = await fetch("http://localhost:4000/api/users/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include", // Send/receive cookies
+      body: JSON.stringify({ email, password }),
+    });
 
-      if (email === "admin@example.com" && password === "admin123") {
-        const userData = {
-          id: "admin-001",
-          email: email,
-          name: "admin 1",
-        };
-
-        setUser(userData);
-        localStorage.setItem("auth-token", "admin-token-2024");
-        localStorage.setItem("user-data", JSON.stringify(userData));
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Login successful:", data);
+      // ✅ Check if logUser is admin
+      if (data.user.logUser === "admin") {
+        setUser(data.user); // Save user info in state
         return true;
+      } else {
+        console.warn("Login user is not admin");
+
+        // ✅ Remove session cookie by hitting logout endpoint
+        await fetch("http://localhost:4000/api/users/logout", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        alert("Login user is not admin"); // Optional: show user-facing message
+        return false;
       }
-      return false;
-    } catch (error) {
-      console.error("Login error:", error);
+    } else {
+      console.error("Login failed:", response.statusText);
       return false;
     }
-  };
+  } catch (error) {
+    console.error("Login error:", error);
+    return false;
+  }
+};
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("auth-token");
-    localStorage.removeItem("user-data");
-    navigate("/login");
+
+  // ✅ Logout
+  const logout = async () => {
+    try {
+      const response = await fetch("http://localhost:4000/api/users/logout", {
+        method: "GET",
+        credentials: "include", // Send cookies
+      });
+
+      if (response.ok) {
+        setUser(null);
+        navigate("/"); // Redirect to login page
+      } else {
+        console.error("Logout failed:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   return (

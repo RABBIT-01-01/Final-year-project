@@ -14,6 +14,7 @@ const reportSchema = new mongoose.Schema({
   severityLevel: { type: String, enum: ["Low", "Medium", "High"] },
   issueType: { type: String, enum: ["Pothole", "Road Damage", "Traffic Light Issue", "Sign Problem", "Debris on Road", "Other"], default: "Other" },
   status: { type: String, enum: ["pending", "verified", "solved"], default: "pending" },
+  maintainance_team: { type: String, default: "Unassigned" },
   reportedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

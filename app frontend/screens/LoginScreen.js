@@ -15,6 +15,8 @@ import {
 } from "react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { CommonActions } from "@react-navigation/native"
+// import { Platform } from "react-native"
+
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("")
@@ -40,8 +42,8 @@ const LoginScreen = ({ navigation }) => {
 
     setIsLoading(true)
     try {
-      
-      const response = await fetch('http://192.168.1.78:4000/api/users/login', {
+      console.log("Sending login request to server...", email, password)
+      const response = await fetch(`http://192.168.1.65:4000/api/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -77,7 +79,8 @@ const LoginScreen = ({ navigation }) => {
       )
     } catch (error) {
       
-      Alert.alert('Error', 'Login failed. Please try again.')
+      // Alert.alert('Error', 'Login failed. Please try again.')
+      Alert.alert("Error", error.message)
     } finally {
       setIsLoading(false)
     }
@@ -94,7 +97,7 @@ const LoginScreen = ({ navigation }) => {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.appIcon}>🚧</Text>
-            <Text style={styles.appTitle}>Sadak</Text>
+            <Text style={styles.appTitle}>Sadak360</Text>
             <Text style={styles.subtitle}>Sign in to your account</Text>
           </View>
 

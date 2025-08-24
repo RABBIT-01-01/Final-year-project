@@ -11,6 +11,7 @@ import {
   ScrollView,
   Alert,
   Image,
+  Button
 } from "react-native"
 import { Picker } from "@react-native-picker/picker"
 import MapModal from "../MapModal"
@@ -25,6 +26,8 @@ const ReportRoadIssue = ({ navigation }) => {
   const [showMap, setShowMap] = useState(false)
   const [selectedImage, setSelectedImage] = useState(null)
 
+
+
   const issueTypes = ["Pothole", "Road Damage", "Traffic Light Issue", "Sign Problem", "Debris on Road", "Other"]
 
   const handleLocationSelect = (selectedLocation, coords) => {
@@ -38,29 +41,50 @@ const ReportRoadIssue = ({ navigation }) => {
       Alert.alert("Error", "Please fill in all required fields")
       return
     }
+    if (!selectedImage) {
+    Alert.alert("Error", "Please attach a photo");
+    return;
+  }
 
-    const reportData = {
-      description,
-      issueType,
-      severityLevel,
-      location,
-      coordinates: {
-        latitude: coordinates ? coordinates.latitude.toString() : "",
-        longitude: coordinates ? coordinates.longitude.toString() : ""
-      },
-      image: selectedImage?.uri || null,
-    }
+    // const reportData = {
+    //   description,
+    //   issueType,
+    //   severityLevel,
+    //   location,
+    //   coordinates: {
+    //     latitude: coordinates ? coordinates.latitude.toString() : "",
+    //     longitude: coordinates ? coordinates.longitude.toString() : ""
+    //   },
+    //   image: selectedImage?.uri || null,
+    // }
+    // 1️⃣ Build FormData
+  const form = new FormData();
+  form.append("description", description);
+  form.append("issueType", issueType);
+  form.append("severityLevel", severityLevel);
+  form.append("location", location);
+  // coordinates on your model expect strings
+  form.append(
+    "coordinates",
+    JSON.stringify({
+      latitude: coordinates ? coordinates.latitude.toString() : "",
+      longitude: coordinates ? coordinates.longitude.toString() : ""
+    })
+  );
+  // 2️⃣ Append the image under the key your multer middleware expects
+  form.append("image", {
+    uri: selectedImage.uri,
+    name: `report-${Date.now()}.jpg`,
+    type: "image/jpeg",
+  });
 
     try {
-      console.log("Saving report:", JSON.stringify(reportData))
+      console.log("Saving report:",form)
       // POST to backend API
 
-      const response = await fetch("http://192.168.1.78:4000/api/requests/", {
+      const response = await fetch("http://192.168.1.65:4000/api/requests/", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(reportData)
+        body: form,
       })
 
       if (!response.ok) {
@@ -117,6 +141,7 @@ const ReportRoadIssue = ({ navigation }) => {
       })
 
       if (!result.canceled && result.assets[0]) {
+        console.log("Image selected from camera:", result.assets[0])
         setSelectedImage(result.assets[0])
       }
     } catch (error) {
@@ -134,6 +159,7 @@ const ReportRoadIssue = ({ navigation }) => {
       })
 
       if (!result.canceled && result.assets[0]) {
+        console.log("Image selected from gallery:", result.assets[0])
         setSelectedImage(result.assets[0])
       }
     } catch (error) {
@@ -258,6 +284,7 @@ const ReportRoadIssue = ({ navigation }) => {
             </TouchableOpacity>
           )}
         </View>
+        
       </ScrollView>
 
       <TouchableOpacity style={styles.finishButton} onPress={handleFinish}>

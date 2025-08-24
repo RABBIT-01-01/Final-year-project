@@ -1,50 +1,76 @@
 const Report = require("../models/report.model");
 
-// const Report = require("../models/report.model");
-
 // Create a new report
-exports.createReport = async (req, res) => {
+exports.createReport = async (req, res, next) => {
   try {
+    // Extract fields from req.body
     const {
       description,
-      image,
       location,
-      coordinates,
       severityLevel,
       issueType,
-      status
+      status,
     } = req.body;
+
+    // Parse coordinates if sent as JSON string
+    let coordinates = {};
+    if (req.body.coordinates) {
+      coordinates = typeof req.body.coordinates === 'string'
+        ? JSON.parse(req.body.coordinates)
+        : req.body.coordinates;
+    }
+
+    // Build image URL from multer upload
+    const imageUrl = req.file
+      ? `/uploads/reports/${req.file.filename}`
+      : null;
 
     const report = new Report({
       description,
-      image,
       location,
       coordinates,
       severityLevel,
       issueType,
       status,
-      reportedBy: req.user._id // Assuming req.user is set by auth middleware
+      image: imageUrl,
+      reportedBy: req.user._id // Set by auth middleware
     });
+
     console.log("Report data:", report);
     const savedReport = await report.save();
     res.status(201).json(savedReport);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    next(error);
   }
 };
 
+// Retrieve all reports
 exports.getAllReports = async (req, res, next) => {
-    try {
-        const reports = await Report.find().populate("reportedBy", "fullname email");
-        res.status(200).json(reports);
-    } catch (error) {
-        next(error);
-    }
-}
+  try {
+    const reports = await Report.find()
+      .populate("reportedBy", "fullname email");
+    res.status(200).json(reports);
+  } catch (error) {
+    next(error);
+  }
+};
 
+// Retrieve reports by user (or single report by ID)
 exports.getReportById = async (req, res, next) => {
-    try {
-        // console.log(req.params.id);
+  try {
+  //   const { id } = req.params;
+  //   const report = await Report.findById(id)
+  //     .populate("reportedBy", "fullname email");
+  //   if (!report) {
+  //     return res.status(404).json({ message: "Report not found" });
+  //   }
+  //   res.status(200).json(report);
+  // } catch (error) {
+  //   next(error);
+  // }
+
+
+   // console.log(req.params.id);
         const userId = req.params.id;
         console.log(userId);
         const report = await Report.find({ reportedBy: userId }).populate("reportedBy", "fullname email");
@@ -56,51 +82,52 @@ exports.getReportById = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-}
+};
 
+// Update an existing report
 exports.updateReport = async (req, res, next) => {
-    try {
-        const {
-            description,
-            image,
-            location,
-            coordinates,
-            severityLevel,
-            issueType,
-            status
-        } = req.body;
+  try {
+    const { id } = req.params;
+    const updateData = { ...req.body };
 
-        const updatedReport = await Report.findByIdAndUpdate(
-            req.params.id,
-            {
-                description,
-                image,
-                location,
-                coordinates,
-                severityLevel,
-                issueType,
-                status
-            },
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedReport) {
-            return res.status(404).json({ message: "Report not found" });
-        }
-        res.status(200).json({ message: "Report updated successfully", report: updatedReport });
-    } catch (error) {
-        next(error);
+    // Parse coordinates if provided
+    if (req.body.coordinates) {
+      updateData.coordinates = typeof req.body.coordinates === 'string'
+        ? JSON.parse(req.body.coordinates)
+        : req.body.coordinates;
     }
-}
 
+    // If a new image was uploaded, update the image field
+    if (req.file) {
+      updateData.image = `/uploads/reports/${req.file.filename}`;
+    }
+
+    const updatedReport = await Report.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedReport) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    res.status(200).json({ message: "Report updated successfully", report: updatedReport });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Delete a report
 exports.deleteReport = async (req, res, next) => {
-    try {
-        const report = await Report.findByIdAndDelete(req.params.id);
-        if (!report) {
-            return res.status(404).json({ message: "Report not found" });
-        }
-        res.status(200).json({ message: "Report deleted successfully" });
-    } catch (error) {
-        next(error);
+  try {
+    const { id } = req.params;
+    const report = await Report.findByIdAndDelete(id);
+    if (!report) {
+      return res.status(404).json({ message: "Report not found" });
     }
-}
+    res.status(200).json({ message: "Report deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+};

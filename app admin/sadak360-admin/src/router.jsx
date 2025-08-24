@@ -24,7 +24,7 @@ function AppRouter() {
         >
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="map" element={<MapView />} />
-          <Route path="analytics" element={<Analytics />} />
+          {/* <Route path="analytics" element={<Analytics />} /> */}
           <Route path="hazards" element={<BrowseHazards />} />
         </Route>
       </Routes>

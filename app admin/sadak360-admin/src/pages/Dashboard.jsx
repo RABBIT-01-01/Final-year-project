@@ -1,7 +1,17 @@
 import { AlertTriangle, Users, MapPin, TrendingUp } from "lucide-react"
 
+
+
+
+
+
+import { useEffect, useState } from "react";
+
 function Dashboard() {
-  const stats = [
+  const [reports, setReports] = useState([]);
+  const [hazardStats, setHazardStats] = useState([]);
+
+   const stats = [
     {
       title: "Total Reports",
       value: "1,234",
@@ -32,6 +42,43 @@ function Dashboard() {
     },
   ]
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("http://localhost:4000/api/requests/");
+        const data = await response.json();
+
+        // Sort reports by createdAt (newest first)
+        const sortedReports = [...data].sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+
+        // Take the 5 most recent reports
+        setReports(sortedReports.slice(0, 5));
+
+        // Calculate hazard distribution
+        const typeCounts = {};
+        data.forEach((report) => {
+          const type = report.issueType;
+          typeCounts[type] = (typeCounts[type] || 0) + 1;
+        });
+
+        const total = data.length;
+        const stats = Object.entries(typeCounts).map(([type, count]) => ({
+          type,
+          count,
+          percentage: ((count / total) * 100).toFixed(1), // 1 decimal point
+        }));
+
+        setHazardStats(stats);
+      } catch (error) {
+        console.error("Error fetching reports:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -48,8 +95,8 @@ function Dashboard() {
           </div>
         ))}
       </div>
-
       <div className="grid gap-4 md:grid-cols-2">
+        {/* Recent Reports */}
         <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
           <div className="flex flex-col space-y-1.5 p-6">
             <h3 className="text-lg font-semibold leading-none tracking-tight">Recent Reports</h3>
@@ -57,30 +104,30 @@ function Dashboard() {
           </div>
           <div className="p-6 pt-0">
             <div className="space-y-4">
-              {[
-                { type: "Pothole", location: "MG Road", severity: "High", time: "2 hours ago" },
-                { type: "Debris", location: "Ring Road", severity: "Medium", time: "4 hours ago" },
-                { type: "Water Logging", location: "City Center", severity: "High", time: "6 hours ago" },
-                { type: "Road Crack", location: "Highway 1", severity: "Low", time: "8 hours ago" },
-              ].map((report, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+              {reports.map((report, index) => (
+                <div
+                  key={report._id || index}
+                  className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                >
                   <div>
-                    <p className="font-medium">{report.type}</p>
+                    <p className="font-medium">{report.issueType}</p>
                     <p className="text-sm text-gray-600">{report.location}</p>
                   </div>
                   <div className="text-right">
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        report.severity === "High"
+                        report.severityLevel === "High"
                           ? "bg-red-100 text-red-800"
-                          : report.severity === "Medium"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-green-100 text-green-800"
+                          : report.severityLevel === "Medium"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-green-100 text-green-800"
                       }`}
                     >
-                      {report.severity}
+                      {report.severityLevel}
                     </span>
-                    <p className="text-xs text-gray-600 mt-1">{report.time}</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {new Date(report.createdAt).toLocaleString()}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -88,6 +135,7 @@ function Dashboard() {
           </div>
         </div>
 
+        {/* Hazard Distribution */}
         <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
           <div className="flex flex-col space-y-1.5 p-6">
             <h3 className="text-lg font-semibold leading-none tracking-tight">Hazard Distribution</h3>
@@ -95,13 +143,7 @@ function Dashboard() {
           </div>
           <div className="p-6 pt-0">
             <div className="space-y-4">
-              {[
-                { type: "Potholes", count: 456, percentage: 37 },
-                { type: "Debris", count: 234, percentage: 19 },
-                { type: "Water Logging", count: 189, percentage: 15 },
-                { type: "Road Cracks", count: 167, percentage: 14 },
-                { type: "Others", count: 188, percentage: 15 },
-              ].map((item, index) => (
+              {hazardStats.map((item, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div
@@ -114,7 +156,9 @@ function Dashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">{item.count}</span>
-                    <span className="text-xs text-gray-600">({item.percentage}%)</span>
+                    <span className="text-xs text-gray-600">
+                      ({item.percentage}%)
+                    </span>
                   </div>
                 </div>
               ))}
@@ -123,7 +167,7 @@ function Dashboard() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default Dashboard
+export default Dashboard;

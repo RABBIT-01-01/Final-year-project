@@ -24,7 +24,7 @@ const PreviousReports = ({ navigation }) => {
 
   const getUserId = async () => {
     try {
-      const response = await fetch("http://192.168.1.78:4000/api/users/profile");
+      const response = await fetch("http://192.168.1.65:4000/api/users/profile");
       if (!response.ok) throw new Error("Failed to fetch user profile");
       const userData = await response.json();
       return userData._id;
@@ -46,7 +46,7 @@ const PreviousReports = ({ navigation }) => {
       }
 
       // Fetch reports for this user
-      const response = await fetch(`http://192.168.1.78:4000/api/requests/${id}`);
+      const response = await fetch(`http://192.168.1.65:4000/api/requests/${id}`);
       if (!response.ok) throw new Error("Failed to fetch reports");
 
       const fetchedReports = await response.json();
@@ -85,7 +85,7 @@ const PreviousReports = ({ navigation }) => {
           onPress: async () => {
             try {
               const response = await fetch(
-                `http://192.168.1.78:4000/api/requests/clear-all/${userId}`,
+                `http://192.168.1.65:4000/api/requests/clear-all/${userId}`,
                 { method: "DELETE" }
               );
               if (!response.ok) throw new Error("Failed to clear all reports");
@@ -109,7 +109,7 @@ const PreviousReports = ({ navigation }) => {
         onPress: async () => {
           try {
             const response = await fetch(
-              `http://192.168.1.78:4000/api/requests/${reportId}`,
+              `http://192.168.1.65:4000/api/requests/${reportId}`,
               { method: "DELETE" }
             );
             if (!response.ok) throw new Error("Failed to delete report");
@@ -193,6 +193,7 @@ const PreviousReports = ({ navigation }) => {
       </View>
 
       <Text style={styles.reportType}>{report.issueType}</Text>
+        
       <Text style={styles.reportDescription} numberOfLines={2}>
         {report.description}
       </Text>
@@ -214,13 +215,13 @@ const PreviousReports = ({ navigation }) => {
       {report.image && (
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: report.image.uri }}
+            source={{ uri: `http://192.168.1.65:4000/api${report.image}` }}
             style={styles.reportImage}
           />
         </View>
       )}
 
-      <Text style={styles.timestamp}>{formatDate(report.timestamp)}</Text>
+      <Text style={styles.timestamp}>{formatDate(report.updatedAt)}</Text>
     </View>
   );
 

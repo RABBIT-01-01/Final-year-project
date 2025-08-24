@@ -1,484 +1,3 @@
-// "use client"
-
-// import { useState, useRef, useEffect } from "react"
-// import { MapPin, Calendar, AlertTriangle, X } from "lucide-react"
-
-// // Mock hazard data
-// // const hazards = [
-// //    {
-// //     id: 1,
-// //     coordinates.latitude: 27.7020,
-// //     coordinates.longitude: 85.3228,
-// //     issueType: "Pothole",
-// //     description: "Deep pothole near Thamel causing vehicle damage",
-// //     severityLevel: "High",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-05T14:30:00Z",
-// //     reportedBy.fullname: "Ramesh Shrestha",
-// //   },
-// //   {
-// //     id: 2,
-// //     coordinates.latitude: 27.7125,
-// //     coordinates.longitude: 85.3266,
-// //     issueType: "Debris",
-// //     description: "Brick debris from construction near New Road",
-// //     severityLevel: "Medium",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-05T13:10:00Z",
-// //     reportedBy.fullname: "Mina Lama",
-// //   },
-// //   {
-// //     id: 3,
-// //     coordinates.latitude: 27.7150,
-// //     coordinates.longitude: 85.3200,
-// //     issueType: "Water Logging",
-// //     description: "Flooded area after monsoon rain in Lazimpat",
-// //     severityLevel: "High",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-05T11:45:00Z",
-// //     reportedBy.fullname: "Bikash Karki",
-// //   },
-// //   {
-// //     id: 4,
-// //     coordinates.latitude: 27.7215,
-// //     coordinates.longitude: 85.3333,
-// //     issueType: "Road Crack",
-// //     description: "Surface crack forming on road near Putalisadak",
-// //     severityLevel: "Low",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-05T10:05:00Z",
-// //     reportedBy.fullname: "Sabina Maharjan",
-// //   },
-// //   {
-// //     id: 5,
-// //     coordinates.latitude: 27.7141,
-// //     coordinates.longitude: 85.3175,
-// //     issueType: "Blocked Drain",
-// //     description: "Clogged drainage causing water overflow in Durbar Marg",
-// //     severityLevel: "Medium",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-05T09:30:00Z",
-// //     reportedBy.fullname: "Dipesh Thapa",
-// //   },
-// //   {
-// //     id: 6,
-// //     coordinates.latitude: 27.7190,
-// //     coordinates.longitude: 85.3100,
-// //     issueType: "Pothole",
-// //     description: "Dangerous pothole near Sorhakhutte",
-// //     severityLevel: "High",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-04T16:20:00Z",
-// //     reportedBy.fullname: "Nirajan Basnet",
-// //   },
-// //   {
-// //     id: 7,
-// //     coordinates.latitude: 27.7132,
-// //     coordinates.longitude: 85.3342,
-// //     issueType: "Construction Obstruction",
-// //     description: "Uncovered sewer line near Bagbazar",
-// //     severityLevel: "High",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-04T15:00:00Z",
-// //     reportedBy.fullname: "Asha Manandhar",
-// //   },
-// //   {
-// //     id: 8,
-// //     coordinates.latitude: 27.7115,
-// //     coordinates.longitude: 85.3290,
-// //     issueType: "Manhole Issue",
-// //     description: "Open manhole near Ratna Park",
-// //     severityLevel: "High",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-04T14:10:00Z",
-// //     reportedBy.fullname: "Sunil Bhandari",
-// //   },
-// //   {
-// //     id: 9,
-// //     coordinates.latitude: 27.7201,
-// //     coordinates.longitude: 85.3211,
-// //     issueType: "Oil Spill",
-// //     description: "Slippery road due to oil near Naxal",
-// //     severityLevel: "Medium",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-04T12:30:00Z",
-// //     reportedBy.fullname: "Ritu Poudel",
-// //   },
-// //   {
-// //     id: 10,
-// //     coordinates.latitude: 27.7222,
-// //     coordinates.longitude: 85.3165,
-// //     issueType: "Fallen Tree",
-// //     description: "Tree blocking half the road in Kamaladi",
-// //     severityLevel: "Medium",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-04T11:00:00Z",
-// //     reportedBy.fullname: "Govinda Thapa",
-// //   },
-// //   {
-// //     id: 11,
-// //     coordinates.latitude: 27.7184,
-// //     coordinates.longitude: 85.3289,
-// //     issueType: "Garbage Overflow",
-// //     description: "Overflowing garbage bins near Bhotahity",
-// //     severityLevel: "Low",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-04T10:15:00Z",
-// //     reportedBy.fullname: "Laxmi Neupane",
-// //   },
-// //   {
-// //     id: 12,
-// //     coordinates.latitude: 27.7235,
-// //     coordinates.longitude: 85.3199,
-// //     issueType: "Road Block",
-// //     description: "Protest causing road block in Maitighar",
-// //     severityLevel: "High",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-03T17:30:00Z",
-// //     reportedBy.fullname: "Rajeev Shakya",
-// //   },
-// //   {
-// //     id: 13,
-// //     coordinates.latitude: 27.7160,
-// //     coordinates.longitude: 85.3122,
-// //     issueType: "Faded Road Markings",
-// //     description: "Crosswalk lines faded near Kalimati",
-// //     severityLevel: "Low",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-03T16:40:00Z",
-// //     reportedBy.fullname: "Nisha Joshi",
-// //   },
-// //   {
-// //     id: 14,
-// //     coordinates.latitude: 27.7108,
-// //     coordinates.longitude: 85.3217,
-// //     issueType: "Speed Bump Damage",
-// //     description: "Broken speed bump near Sundhara",
-// //     severityLevel: "Medium",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-03T15:10:00Z",
-// //     reportedBy.fullname: "Anil Khadka",
-// //   },
-// //   {
-// //     id: 15,
-// //     coordinates.latitude: 27.7199,
-// //     coordinates.longitude: 85.3271,
-// //     issueType: "Sidewalk Obstruction",
-// //     description: "Vendors blocking sidewalk in Ason",
-// //     severityLevel: "Low",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-03T13:55:00Z",
-// //     reportedBy.fullname: "Sharmila KC",
-// //   },
-// //   {
-// //     id: 16,
-// //     coordinates.latitude: 27.7242,
-// //     coordinates.longitude: 85.3233,
-// //     issueType: "Traffic Light Malfunction",
-// //     description: "Lights not working at Dilli Bazaar intersection",
-// //     severityLevel: "Medium",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-03T12:00:00Z",
-// //     reportedBy.fullname: "Kiran Ghimire",
-// //   },
-// //   {
-// //     id: 17,
-// //     coordinates.latitude: 27.7112,
-// //     coordinates.longitude: 85.3188,
-// //     issueType: "Dust Pollution",
-// //     description: "Uncovered road releasing dust near Tripureshwor",
-// //     severityLevel: "Medium",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-03T11:10:00Z",
-// //     reportedBy.fullname: "Rojina Maharjan",
-// //   },
-// //   {
-// //     id: 18,
-// //     coordinates.latitude: 27.7260,
-// //     coordinates.longitude: 85.3312,
-// //     issueType: "Broken Signage",
-// //     description: "Road sign fallen at Gaushala",
-// //     severityLevel: "Low",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-03T10:00:00Z",
-// //     reportedBy.fullname: "Manoj Pokharel",
-// //   },
-// //   {
-// //     id: 19,
-// //     coordinates.latitude: 27.7139,
-// //     coordinates.longitude: 85.3251,
-// //     issueType: "Blocked Road",
-// //     description: "Truck blocking narrow street near Basantapur",
-// //     severityLevel: "High",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-03T09:00:00Z",
-// //     reportedBy.fullname: "Krishna Lama",
-// //   },
-// //   {
-// //     id: 20,
-// //     coordinates.latitude: 27.7177,
-// //     coordinates.longitude: 85.3300,
-// //     issueType: "Leakage",
-// //     description: "Water pipe leakage near Bhadrakali",
-// //     severityLevel: "Medium",
-// //     image: "/placeholder.svg?height=200&width=300",
-// //     createdAt: "2024-07-03T08:15:00Z",
-// //     reportedBy.fullname: "Sandhya Giri",
-// //   },
-// // ]
-
-// // API endpoint
-// const API_URL = "http://localhost:4000/api/requests/"
-
-// function MapView() {
-//   const [hazards, setHazards] = useState([]) // fetched hazards
-//   const [selectedHazard, setSelectedHazard] = useState(null)
-//   const mapRef = useRef(null)
-//   const [loading, setLoading] = useState(true)
-//   const [error, setError] = useState(null)
-//   const mapInstanceRef = useRef(null)
-
-
-//     // Fetch hazard data from API
-//   useEffect(() => {
-//     const fetchHazards = async () => {
-//       try {
-//         const res = await fetch(API_URL)
-//         if (!res.ok) throw new Error("Failed to fetch hazards")
-//         const data = await res.json()
-//         console.log("Fetched hazards:", data)
-//         setHazards(data)
-//         setLoading(false)
-//       } catch (err) {
-//         console.error(err)
-//         setError("Unable to load hazard data")
-//         setLoading(false)
-//       }
-//     }
-
-//     fetchHazards()
-//   }, [])
-
-
-//   useEffect(() => {
-//     if (!loading && !error && hazards.length > 0) {
-//       // Initialize map after hazards load
-//       const initMap = () => {
-//         if (typeof window !== "undefined" && window.L && mapRef.current) {
-//           if (mapInstanceRef.current) {
-//             mapInstanceRef.current.remove()
-//           }
-
-//           const L = window.L
-//           const map = L.map(mapRef.current, {
-//             center: [27.7172, 85.324],
-//             zoom: 13,
-//             zoomControl: true,
-//           })
-
-//           L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-//             attribution: "© OpenStreetMap contributors",
-//             maxZoom: 19,
-//           }).addTo(map)
-
-//           mapInstanceRef.current = map
-
-//           hazards.forEach((hazard) => {
-//             const iconColor =
-//               hazard.severityLevel === "High"
-//                 ? "red"
-//                 : hazard.severityLevel === "Medium"
-//                 ? "orange"
-//                 : "green"
-
-//             const customIcon = L.divIcon({
-//               className: "custom-marker",
-//               html: `<div style="background-color: ${iconColor}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-//               iconSize: [20, 20],
-//               iconAnchor: [10, 10],
-//             })
-
-//             const marker = L.marker([hazard.coordinates.latitude, hazard.coordinates.longitude], { icon: customIcon })
-//               .addTo(map)
-//               .on("click", () => setSelectedHazard(hazard))
-
-//             const popupContent = `
-//               <div style="min-width: 200px; font-family: inherit;">
-//                 <h3 style="margin: 0 0 8px 0; font-weight: bold; font-size: 14px;">${hazard.issueType}</h3>
-//                 <p style="margin: 0 0 8px 0; font-size: 12px; color: #666;">${hazard.description}</p>
-//                 <div style="display: flex; justify-content: space-between; align-items: center;">
-//                   <span style="padding: 2px 8px; border-radius: 12px; font-size: 11px; background-color: ${
-//                     hazard.severityLevel === "High"
-//                       ? "#fee2e2; color: #dc2626"
-//                       : hazard.severityLevel === "Medium"
-//                       ? "#fef3c7; color: #d97706"
-//                       : "#dcfce7; color: #16a34a"
-//                   };">${hazard.severityLevel}</span>
-//                   <span style="font-size: 11px; color: #6b7280;">${new Date(
-//                     hazard.createdAt
-//                   ).toLocaleDateString()}</span>
-//                 </div>
-//               </div>
-//             `
-//             marker.bindPopup(popupContent)
-//           })
-
-//           if (hazards.length > 0) {
-//             const group = new L.featureGroup(map._layers)
-//             if (Object.keys(group._layers).length > 0) {
-//               map.fitBounds(group.getBounds().pad(0.1))
-//             }
-//           }
-//         }
-//       }
-
-//       if (window.L) {
-//         initMap()
-//       } else {
-//         const checkLeaflet = setInterval(() => {
-//           if (window.L) {
-//             clearInterval(checkLeaflet)
-//             initMap()
-//           }
-//         }, 100)
-//         setTimeout(() => clearInterval(checkLeaflet), 10000)
-//       }
-//     }
-//     return () => {
-//       if (mapInstanceRef.current) {
-//         mapInstanceRef.current.remove()
-//         mapInstanceRef.current = null
-//       }
-//     }
-//   }, [hazards, loading, error])
-
-//   const getSeverityColor = (severityLevel) => {
-//     switch (severityLevel) {
-//       case "High":
-//         return "badge badge-danger"
-//       case "Medium":
-//         return "badge badge-warning"
-//       case "Low":
-//         return "badge badge-success"
-//       default:
-//         return "badge badge-secondary"
-//     }
-//   }
-
-//   return (
-//     <div className="flex flex-1 h-full">
-//       <div className="flex-1 relative">
-//         {loading && (
-//           <div className="absolute inset-0 flex justify-center items-center bg-gray-100 z-50">
-//             <span>Loading hazards...</span>
-//           </div>
-//         )}
-//         {error && (
-//           <div className="absolute inset-0 flex justify-center items-center bg-red-100 text-red-500 z-50">
-//             <span>{error}</span>
-//           </div>
-//         )}
-//         <div
-//           ref={mapRef}
-//           className="w-full h-full"
-//           style={{
-//             minHeight: "600px",
-//             zIndex: 1,
-//             backgroundColor: "#f3f4f6",
-//           }}
-//         />
-
-//         {/* Map Legend */}
-//         {!loading && !error && (
-//           <div className="absolute top-4 right-4 w-64 card" style={{ zIndex: 1000 }}>
-//             <div className="card-header">
-//               <h3 className="text-sm font-semibold">Hazard Legend</h3>
-//             </div>
-//             <div className="card-content space-y-2">
-//               <div className="flex items-center gap-2">
-//                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-//                 <span className="text-sm">High severityLevel</span>
-//               </div>
-//               <div className="flex items-center gap-2">
-//                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-//                 <span className="text-sm">Medium severityLevel</span>
-//               </div>
-//               <div className="flex items-center gap-2">
-//                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-//                 <span className="text-sm">Low severityLevel</span>
-//               </div>
-//             </div>
-//           </div>
-//         )}
-//       </div>
-
-//       {/* Hazard Details Panel */}
-//       {selectedHazard && (
-//         <div className="w-80 border-l bg-white p-4 overflow-y-auto">
-//           <div className="flex items-center justify-between mb-4">
-//             <h3 className="text-lg font-semibold">Hazard Details</h3>
-//             <button className="btn btn-ghost btn-icon-sm" onClick={() => setSelectedHazard(null)}>
-//               <X className="h-4 w-4" />
-//             </button>
-//           </div>
-
-//           <div className="space-y-4">
-//             <div>
-//               <img
-//                 src={selectedHazard.image || "/placeholder.svg?height=200&width=300"}
-//                 alt={selectedHazard.issueType}
-//                 className="w-full h-48 object-cover rounded-lg"
-//               />
-//             </div>
-
-//             <div>
-//               <h4 className="font-medium text-lg">{selectedHazard.issueType}</h4>
-//               <p className="text-sm text-gray-600 mt-1">{selectedHazard.description}</p>
-//             </div>
-
-//             <div className="flex items-center gap-2">
-//               <AlertTriangle className="h-4 w-4" />
-//               <span className="text-sm font-medium">severityLevel:</span>
-//               <span className={getSeverityColor(selectedHazard.severityLevel)}>{selectedHazard.severityLevel}</span>
-//             </div>
-
-//             <div className="flex items-center gap-2">
-//               <MapPin className="h-4 w-4" />
-//               <span className="text-sm font-medium">Location:</span>
-//               <span className="text-sm">
-//                 {selectedHazard.location}
-//               </span>
-//             </div>
-
-//             <div className="flex items-center gap-2">
-//               <Calendar className="h-4 w-4" />
-//               <span className="text-sm font-medium">Reported:</span>
-//               <span className="text-sm">{new Date(selectedHazard.createdAt).toLocaleString()}</span>
-//             </div>
-
-//             <div>
-//               <span className="text-sm font-medium">reportedBy.fullname:</span>
-//               <span className="text-sm ml-2">{selectedHazard.reportedBy.fullname}</span>
-//             </div>
-
-//             <div className="pt-4 space-y-2">
-//               <button className="btn btn-primary w-full">Mark as Resolved</button>
-//               <button className="btn btn-secondary w-full">Assign to Team</button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   )
-// }
-
-// export default MapView
-
-
-
-
-
-
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -490,6 +9,9 @@ export default function MapView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedHazard, setSelectedHazard] = useState(null);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState("");
+  const teams = ["Pothole", "Electricity", "Flood", "Traffic jam", "Emergency"];
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
 
@@ -501,19 +23,20 @@ export default function MapView() {
         if (!response.ok) throw new Error("Failed to fetch hazard data");
         const data = await response.json();
 
-        // Transform API data to match our hazard structure
         const transformed = data.map((item) => ({
           lat: Math.round(parseFloat(item.coordinates.latitude) * 1e4) / 1e4,
           lng: Math.round(parseFloat(item.coordinates.longitude) * 1e4) / 1e4,
-
+          status: item.status,
           type: item.issueType,
           description: item.description,
           severity: item.severityLevel,
           image: item.image,
           timestamp: item.createdAt,
           reporter: item.reportedBy.fullname,
+          maintainance_team: item.maintainance_team || "Unassigned",
+          id: item._id,
         }));
-        console.log("Fetched hazards:", transformed);
+
         setHazards(transformed);
         setLoading(false);
       } catch (err) {
@@ -526,6 +49,58 @@ export default function MapView() {
     fetchHazards();
   }, []);
 
+  const ResolvedHazard = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:4000/api/requests/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "solved" }),
+      });
+      if (!response.ok) throw new Error("Failed to update hazard status");
+      const updatedHazard = await response.json();
+      const newStatus = updatedHazard.status || "solved";
+
+      setSelectedHazard((prev) =>
+        prev && prev.id === id ? { ...prev, status: newStatus } : prev
+      );
+
+      setHazards((prev) =>
+        prev.map((h) => (h.id === id ? { ...h, status: newStatus } : h))
+      );
+    } catch (err) {
+      console.error(err);
+      setError("Failed to update hazard status.");
+    }
+  };
+
+  const assignToTeam = async (hazardId, team) => {
+    try {
+      const response = await fetch(`http://localhost:4000/api/requests/${hazardId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ maintainance_team: team }),
+      });
+      if (!response.ok) throw new Error("Failed to assign team");
+      const updatedHazard = await response.json();
+
+      setSelectedHazard((prev) =>
+        prev && prev.id === hazardId ? { ...prev, assignedTeam: team } : prev
+      );
+
+      setHazards((prev) =>
+        prev.map((h) => (h.id === hazardId ? { ...h, assignedTeam: team } : h))
+      );
+
+      setShowAssignModal(false);
+      setSelectedTeam("");
+    } catch (err) {
+      console.error(err);
+      setError("Failed to assign team.");
+    }
+  };
+
   // Utility: Haversine formula to calculate distance
   const haversineDistance = (lat1, lng1, lat2, lng2) => {
     const R = 6371;
@@ -537,19 +112,17 @@ export default function MapView() {
         Math.cos((lat2 * Math.PI) / 180) *
         Math.sin(dLng / 2) ** 2;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    console.log(`Distance between (${lat1}, ${lng1}) and (${lat2}, ${lng2}): ${R * c} km`);
     return R * c;
   };
 
-  // Cluster hazards based on zoom level
   const clusterHazards = (hazards, zoom) => {
     const threshold =
-  zoom >= 16 ? 0 : // No clustering at high zoom
-  zoom >= 14 ? 0.3 : // Fine clustering
-  zoom >= 12 ? 0.7 : // Medium clustering
-  zoom >= 10 ? 5 : // Coarse clustering
-  zoom >= 8 ? 10 : // Wider clustering
-  20; // Very wide clustering for global zoom
+      zoom >= 16 ? 0 :
+      zoom >= 14 ? 0.3 :
+      zoom >= 12 ? 0.7 :
+      zoom >= 10 ? 5 :
+      zoom >= 8 ? 10 : 20;
+
     const clusters = [];
     const visited = new Set();
 
@@ -619,7 +192,6 @@ export default function MapView() {
     });
   };
 
-  // Initialize map
   useEffect(() => {
     if (typeof window === "undefined" || !window.L || !mapRef.current) return;
     if (loading || error) return;
@@ -635,7 +207,6 @@ export default function MapView() {
     mapInstanceRef.current = map;
 
     const render = () => {
-      // Remove all markers but keep tile layers
       map.eachLayer((layer) => {
         if (layer instanceof L.Marker && !layer._iconUrl) {
           map.removeLayer(layer);
@@ -685,35 +256,45 @@ export default function MapView() {
   return (
     <div className="flex flex-1 h-full">
       <div className="flex-1 relative">
-        <div
-          ref={mapRef}
-          className="w-full h-full"
-          style={{ minHeight: "600px" }}
-        />
+        <div ref={mapRef} className="w-full h-full" style={{ minHeight: "600px" }} />
       </div>
+
       {selectedHazard && (
         <div className="w-80 border-l bg-white p-4 overflow-y-auto">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Hazard Details</h3>
             <button
               className="btn btn-ghost btn-icon-sm"
-              onClick={() => setSelectedHazard(null)}
+              onClick={() => (setSelectedHazard(null),setShowAssignModal(false))}
             >
               <X className="h-4 w-4" />
             </button>
           </div>
           <div className="space-y-4">
             <img
-              src={selectedHazard.image}
+              src={
+                selectedHazard.image
+                  ? `http://localhost:4000/api/${selectedHazard.image.replace(/^\//, "")}`
+                  : "/placeholder.svg"
+              }
               alt={selectedHazard.type}
               className="w-full h-48 object-cover rounded-lg"
             />
+
             <div>
               <h4 className="font-medium text-lg">{selectedHazard.type}</h4>
-              <p className="text-sm text-gray-600 mt-1">
-                {selectedHazard.description}
-              </p>
+              <h4
+                className={`font-medium text-lg px-3 py-1 rounded-md inline-block ${
+                  selectedHazard.status === "pending"
+                    ? "bg-red-500 text-red-800"
+                    : "bg-green-500 text-green-800"
+                }`}
+              >
+                {selectedHazard.status}
+              </h4>
+              <p className="text-sm text-gray-600 mt-1">{selectedHazard.description}</p>
             </div>
+
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               <span className="text-sm font-medium">Severity:</span>
@@ -721,6 +302,7 @@ export default function MapView() {
                 {selectedHazard.severity}
               </span>
             </div>
+
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               <span className="text-sm font-medium">Location:</span>
@@ -728,6 +310,7 @@ export default function MapView() {
                 {selectedHazard.lat.toFixed(4)}, {selectedHazard.lng.toFixed(4)}
               </span>
             </div>
+
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               <span className="text-sm font-medium">Reported:</span>
@@ -735,22 +318,85 @@ export default function MapView() {
                 {new Date(selectedHazard.timestamp).toLocaleString()}
               </span>
             </div>
+
+             <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm font-medium">assigned to:</span>
+              <span className="text-sm">
+                {selectedHazard.maintainance_team}
+              </span>
+            </div>
+
             <div>
               <span className="text-sm font-medium">Reporter:</span>
               <span className="text-sm ml-2">{selectedHazard.reporter}</span>
             </div>
+
+            {selectedHazard.assignedTeam && (
+              <div>
+                <span className="text-sm font-medium">Assigned Team:</span>
+                <span className="text-sm ml-2">{selectedHazard.assignedTeam}</span>
+              </div>
+            )}
+
             <div className="pt-4 space-y-2">
-              <button className="btn btn-primary w-full">
+              <button
+                className="btn btn-primary w-full"
+                onClick={() => ResolvedHazard(selectedHazard.id)}
+              >
                 Mark as Resolved
               </button>
-              <button className="btn btn-secondary w-full">
+              <button
+                className="btn btn-secondary w-full"
+                onClick={() => setShowAssignModal(true)}
+              >
                 Assign to Team
               </button>
             </div>
           </div>
         </div>
       )}
+
+       {/* {selectedHazard && (
+        <div className="w-80 border-l bg-white p-4 overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Hazard Details</h3> */}
+
+     {showAssignModal && (
+  <div className="  flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto ">
+    <div className="bg-white rounded-lg shadow-lg p-6 w-80 relative ">
+      <h3 className="text-lg font-semibold mb-4">Assign here</h3>
+      <select
+        className="w-full border rounded-md p-2 mb-4"
+        value={selectedTeam}
+        onChange={(e) => setSelectedTeam(e.target.value)}
+      >
+        <option value="">-- Select maintainance team --</option>
+        {teams.map((team, index) => (
+          <option key={index} value={team}>
+            {team}
+          </option>
+        ))}
+      </select>
+      <div className="flex justify-end gap-2">
+        <button
+          className="btn btn-ghost"
+          onClick={() => setShowAssignModal(false)}
+        >
+          Cancel
+        </button>
+        <button
+          className="btn btn-primary"
+          disabled={!selectedTeam}
+          onClick={() => assignToTeam(selectedHazard.id, selectedTeam)}
+        >
+          Assign
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
-

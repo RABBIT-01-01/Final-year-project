@@ -4,11 +4,22 @@ import { useState, useCallback } from "react"
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Dimensions } from "react-native"
 import { useFocusEffect } from "@react-navigation/native"
 import { getReports } from "./ReportStorage"
+import MapAll from "../MapAll"
 
 const { width } = Dimensions.get("window")
 
 const HomeScreen = ({ navigation }) => {
+  const [showMap, setShowMap] = useState(false)
   const [reportsCount, setReportsCount] = useState(0)
+  const [location, setLocation] = useState("")
+  const [coordinates, setCoordinates] = useState(null)
+
+
+  const handleLocationSelect = (selectedLocation, coords) => {
+    setLocation(selectedLocation)
+    setCoordinates(coords)
+    setShowMap(false)
+  }
 
   const loadReportsData = async () => {
     try {
@@ -65,7 +76,7 @@ const HomeScreen = ({ navigation }) => {
         {/* Quick Stats */}
         <View style={styles.statsContainer}>
           <QuickStatsCard title="Total Reports" value={reportsCount} icon="📊" color="#007AFF" />
-          <QuickStatsCard title="This Month" value={0} icon="📅" color="#4CAF50" />
+          {/* <QuickStatsCard title="This Month" value={0} icon="📅" color="#4CAF50" /> */}
           <QuickStatsCard title="High Priority" value={0} icon="⚠️" color="#F44336" />
         </View>
 
@@ -93,7 +104,47 @@ const HomeScreen = ({ navigation }) => {
             color="#8E44AD"
             onPress={() => navigation.navigate("UserProfile")}
           />
+          <MenuCard
+            title="view all reports on map"
+            subtitle="reported by all users"
+            icon="📅"
+            color="#8E44AD"
+            onPress={() => setShowMap(true)}
+          />
         </View>
+
+        {/* <View style={styles.section}>
+                  <Text style={styles.label}>Location Selection</Text>
+                  <View style={styles.locationContainer}>
+                    <TouchableOpacity style={styles.locationInput} onPress={() => setShowMap(true)}>
+                      <Text style={[styles.locationText, !location && styles.placeholder]}>{location || "Location"}</Text>
+                      <View style={styles.locationIcons}>
+                        {location && (
+                          <TouchableOpacity
+                            style={styles.clearLocationButton}
+                            onPress={() => {
+                              setLocation("")
+                              setCoordinates(null)
+                            }}
+                          >
+                            <Text style={styles.clearLocationIcon}>✕</Text>
+                          </TouchableOpacity>
+                        )}
+                        <Text style={styles.mapIcon}>📍</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                  {coordinates && (
+                    <View>
+                      <Text style={styles.coordinatesText}>
+                        📍 {coordinates.latitude.toFixed(6)}, {coordinates.longitude.toFixed(6)}
+                      </Text>
+                      {coordinates.accuracy && (
+                        <Text style={styles.accuracyText}>Accuracy: ±{Math.round(coordinates.accuracy)}m</Text>
+                      )}
+                    </View>
+                  )}
+                </View> */}
 
         {/* Quick Tips */}
         <View style={styles.section}>
@@ -116,6 +167,12 @@ const HomeScreen = ({ navigation }) => {
 
         <View style={styles.bottomPadding} />
       </ScrollView>
+      <MapAll
+      visible={showMap}
+      onClose={() => setShowMap(false)}
+      onLocationSelect={handleLocationSelect}
+      initialLocation={coordinates}
+    />
     </SafeAreaView>
   )
 }

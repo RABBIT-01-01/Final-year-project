@@ -18,7 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { getReports, clearAllReports } from "./ReportStorage"
 
 // const USER_PROFILE_KEY = "@user_profile"
-const API_URL = "http://192.168.1.78:4000/api/users/profile"
+const API_URL = "http://192.168.1.65:4000/api/users/profile"
 
 const UserProfile = ({ navigation }) => {
   const [profile, setProfile] = useState({

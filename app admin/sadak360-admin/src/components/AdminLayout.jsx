@@ -13,11 +13,11 @@ const navigation = [
     icon: Map,
     href: "/map",
   },
-  {
-    title: "Analytics",
-    icon: BarChart3,
-    href: "/analytics",
-  },
+  // {
+  //   title: "Analytics",
+  //   icon: BarChart3,
+  //   href: "/analytics",
+  // },
   {
     title: "Browse Hazards",
     icon: Filter,
