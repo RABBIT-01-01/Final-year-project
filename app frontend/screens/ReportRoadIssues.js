@@ -16,6 +16,7 @@ import {
 import { Picker } from "@react-native-picker/picker"
 import MapModal from "../MapModal"
 import * as ImagePicker from "expo-image-picker"
+import URL from "../config"
 
 const ReportRoadIssue = ({ navigation }) => {
   const [description, setDescription] = useState("")
@@ -82,7 +83,7 @@ const ReportRoadIssue = ({ navigation }) => {
       console.log("Saving report:",form)
       // POST to backend API
 
-      const response = await fetch("http://192.168.1.65:4000/api/requests/", {
+      const response = await fetch(`http://${URL}:4000/api/requests/`, {
         method: "POST",
         body: form,
       })

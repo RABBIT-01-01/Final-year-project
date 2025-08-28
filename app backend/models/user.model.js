@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema({
     logUser: {
         type: String,
         required: true,
-        enum: ['user', 'admin'], // Only allow 'user' or 'admin'
+        enum: ['user', 'admin','maintenance'], // Only allow 'user' or 'admin'
         default: 'user', // Default role is 'user'
     },
     password: {
@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema({
     socketId: {
         type: String,
     },
+    maintenance_team:{
+        type: String,
+        default: "Unassigned"
+    }
 })
  
 userSchema.methods.generateAuthToken = function() {

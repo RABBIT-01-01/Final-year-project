@@ -113,38 +113,7 @@ const HomeScreen = ({ navigation }) => {
           />
         </View>
 
-        {/* <View style={styles.section}>
-                  <Text style={styles.label}>Location Selection</Text>
-                  <View style={styles.locationContainer}>
-                    <TouchableOpacity style={styles.locationInput} onPress={() => setShowMap(true)}>
-                      <Text style={[styles.locationText, !location && styles.placeholder]}>{location || "Location"}</Text>
-                      <View style={styles.locationIcons}>
-                        {location && (
-                          <TouchableOpacity
-                            style={styles.clearLocationButton}
-                            onPress={() => {
-                              setLocation("")
-                              setCoordinates(null)
-                            }}
-                          >
-                            <Text style={styles.clearLocationIcon}>✕</Text>
-                          </TouchableOpacity>
-                        )}
-                        <Text style={styles.mapIcon}>📍</Text>
-                      </View>
-                    </TouchableOpacity>
-                  </View>
-                  {coordinates && (
-                    <View>
-                      <Text style={styles.coordinatesText}>
-                        📍 {coordinates.latitude.toFixed(6)}, {coordinates.longitude.toFixed(6)}
-                      </Text>
-                      {coordinates.accuracy && (
-                        <Text style={styles.accuracyText}>Accuracy: ±{Math.round(coordinates.accuracy)}m</Text>
-                      )}
-                    </View>
-                  )}
-                </View> */}
+        
 
         {/* Quick Tips */}
         <View style={styles.section}>

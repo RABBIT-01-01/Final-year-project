@@ -10,7 +10,7 @@ router.post('/register', [
     body('phone')
     .matches(/^9[87]\d{8}$/)
     .withMessage('Phone number must start with 98 or 97 and be 10 digits long'),
-    body('logUser').isIn(['user', 'admin']).withMessage('User type must be either user or admin'),
+    body('logUser').isIn(['user', 'admin','maintenance']).withMessage('User type must be either user or admin or maintenance'),
     body('password').isLength({min:6}).withMessage('Password must be at least 6 characters long'),
 ], userController.registerUser);
 router.post('/login', [

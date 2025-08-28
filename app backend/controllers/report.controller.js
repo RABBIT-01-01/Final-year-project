@@ -84,6 +84,35 @@ exports.getReportById = async (req, res, next) => {
     }
 };
 
+exports.getReportsByTeam = async (req, res, next) => {
+  try {
+    const team = req.params.team;
+    const reports = await Report.find({ maintenance_team: team })
+      .populate("reportedBy", "fullname email");
+    if (!reports || reports.length === 0) {
+      return res.status(404).json({ message: "No reports found for this team" });
+    }
+    res.status(200).json(reports);
+  } catch (error) {
+    next(error);
+  }
+};  
+
+// exports.getReportsByTeam = async (req, res) => {
+//   try {
+//     const { team } = req.params;
+//     const reports = await Report.find({ maintenance_team: team });
+
+//     if (!reports || reports.length === 0) {
+//       return res.status(404).json({ message: `No reports found for team: ${team}` });
+//     }
+
+//     res.status(200).json(reports);
+//   } catch (error) {
+//     console.error('Error fetching reports by team:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
 // Update an existing report
 exports.updateReport = async (req, res, next) => {
   try {

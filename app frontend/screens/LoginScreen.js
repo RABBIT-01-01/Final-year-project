@@ -15,7 +15,7 @@ import {
 } from "react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { CommonActions } from "@react-navigation/native"
-// import { Platform } from "react-native"
+import URL from "../config"
 
 
 const LoginScreen = ({ navigation }) => {
@@ -40,19 +40,32 @@ const LoginScreen = ({ navigation }) => {
       return
     }
 
+        // ===== MOCK MAINTENANCE LOGIN =====
+    // if (email === "maintenance@sadak360.com" && password === "maint123") {
+    //   // Navigate to MaintenanceHomeScreen
+    //   navigation.dispatch(
+    //     CommonActions.reset({
+    //       index: 0,
+    //       routes: [{ name: "MaintenanceHome" }],
+    //     })
+    //   )
+    //   return
+    //   }
+
+
+    
+
+
     setIsLoading(true)
     try {
       console.log("Sending login request to server...", email, password)
-      const response = await fetch(`http://192.168.1.65:4000/api/users/login`, {
+      // const response = await fetch(`http://${URL}:4000/api/users/login`, {
+      const response = await fetch(`http://${URL}:4000/api/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
-      // const response = await fetch('http://localhost:4000/api/users/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password }),
-      // })
+      
       alert("Request sent to server")
       // alert("Response: " + JSON.stringify(response))
 
@@ -64,19 +77,35 @@ const LoginScreen = ({ navigation }) => {
         setIsLoading(false)
         return
       }
-
+      
       const { token, user } = data
-      // Save token and user data
+     
       await AsyncStorage.setItem('@user_token', token)
       await AsyncStorage.setItem('@user_data', JSON.stringify(user))
-
-      // Reset navigation stack
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Home' }],
-        }),
-      )
+      if (user.logUser === 'maintenance') {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [
+              {
+                name: 'MaintenanceHome',
+                params: { maintenanceTeam: user.maintenance_team },
+              },
+            ],
+          })
+        )
+        setIsLoading(false)
+        return
+      }
+      else if (user.logUser === 'user') {
+        // Reset navigation stack
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          }),
+        )
+      }
     } catch (error) {
       
       // Alert.alert('Error', 'Login failed. Please try again.')

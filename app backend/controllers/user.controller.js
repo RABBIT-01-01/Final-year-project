@@ -8,7 +8,7 @@ module.exports.registerUser= async (req, res,next) => {
         return res.status(400).json({ errors: error.array() });
     }
 
-    const { fullname, email,phone, logUser, password } = req.body;
+    const { fullname, email,phone, logUser, password ,maintenance_team} = req.body;
 
     const isUserAlready = await userModel.findOne({ email });
     const isPhoneAlready = await userModel.findOne({ phone });
@@ -25,7 +25,8 @@ module.exports.registerUser= async (req, res,next) => {
         email,
         phone,
         logUser,
-        password:hashedPassword
+        password:hashedPassword,
+        maintenance_team
     });
 
 const token = user.generateAuthToken();

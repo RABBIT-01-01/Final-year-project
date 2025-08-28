@@ -8,6 +8,8 @@ import HomeScreen from './screens/HomeScreen';
 import ReportRoadIssue from './screens/ReportRoadIssues';
 import PreviousReports from './screens/PreviousReports';
 import UserProfile from './screens/UserProfile';
+// import MaintenanceHomeScreen from './screens/MaintenanceHomeScreen';
+import MaintenanceHomeSCreen from './Maintainance'
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -21,7 +23,7 @@ export default function App() {
         <Stack.Screen name="ReportRoadIssue" component={ReportRoadIssue} />
         <Stack.Screen name="PreviousReports" component={PreviousReports} />
         <Stack.Screen name="UserProfile" component={UserProfile} />
-
+        <Stack.Screen name="MaintenanceHome" component={MaintenanceHomeSCreen} options={{ headerShown: false }} />
 
 
       </Stack.Navigator>

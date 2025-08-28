@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from "react"
 import { Modal, View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert } from "react-native"
 import { WebView } from "react-native-webview"
 import * as Location from "expo-location"
+import URL from "./config"
 
-const API_URL = "http://192.168.1.65:4000/api/requests/"
+const API_URL = `http://${URL}:4000/api/requests/`
 
 const MapModal = ({ visible, onClose }) => {
   const webViewRef = useRef(null)
@@ -192,7 +193,7 @@ const MapModal = ({ visible, onClose }) => {
             var img = (data && data.image) ? String(data.image) : "";
 
             // always prepend backend API
-            var fullUrl = "http://192.168.1.65:4000/api/" + img.replace(/^\\/+/,"");
+            var fullUrl = "http://${URL}:4000/api/" + img.replace(/^\\/+/,"");
 
 
             var html =

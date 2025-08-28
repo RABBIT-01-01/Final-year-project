@@ -15,6 +15,7 @@ import {
 } from "react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { CommonActions } from "@react-navigation/native"
+import URL from "../config"
 
 const RegisterScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
@@ -73,7 +74,7 @@ const RegisterScreen = ({ navigation }) => {
   setIsLoading(true);
 
   try {
-    const response = await fetch("http://192.168.1.65:4000/api/users/register", {
+    const response = await fetch(`http://${URL}:4000/api/users/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -15,10 +15,12 @@ import {
 import { useFocusEffect } from "@react-navigation/native"
 import { CommonActions } from "@react-navigation/native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+// import Cookies from '@react-native-community/cookies';
 import { getReports, clearAllReports } from "./ReportStorage"
+import URL from "../config"
 
 // const USER_PROFILE_KEY = "@user_profile"
-const API_URL = "http://192.168.1.65:4000/api/users/profile"
+const API_URL = `http://${URL}:4000/api/users/profile`
 
 const UserProfile = ({ navigation }) => {
   const [profile, setProfile] = useState({
@@ -107,6 +109,8 @@ const UserProfile = ({ navigation }) => {
         onPress: async () => {
           try {
             await AsyncStorage.removeItem("@user_token")
+            // await Cookies.clearAll();
+          
             // Reset navigation stack to login screen
             navigation.dispatch(
               CommonActions.reset({

@@ -42,6 +42,14 @@ router.get(
   reportController.getReportById
 );
 
+// Retrieve reports by maintenance_team
+router.get(
+  '/team/:team',
+  authMiddleware.authUser,
+  reportController.getReportsByTeam
+);
+
+
 // Update an existing report (optionally replace image)
 router.put(
   '/:id',

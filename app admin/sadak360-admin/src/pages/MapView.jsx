@@ -33,7 +33,7 @@ export default function MapView() {
           image: item.image,
           timestamp: item.createdAt,
           reporter: item.reportedBy.fullname,
-          maintainance_team: item.maintainance_team || "Unassigned",
+          maintenance_team: item.maintenance_team || "Unassigned",
           id: item._id,
         }));
 
@@ -80,7 +80,7 @@ export default function MapView() {
       const response = await fetch(`http://localhost:4000/api/requests/${hazardId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ maintainance_team: team }),
+        body: JSON.stringify({ maintenance_team: team }),
       });
       if (!response.ok) throw new Error("Failed to assign team");
       const updatedHazard = await response.json();

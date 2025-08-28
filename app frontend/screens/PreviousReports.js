@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import URL from "../config"
 
 const PreviousReports = ({ navigation }) => {
   const [reports, setReports] = useState([]);
@@ -22,9 +23,10 @@ const PreviousReports = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
 
+
   const getUserId = async () => {
     try {
-      const response = await fetch("http://192.168.1.65:4000/api/users/profile");
+      const response = await fetch(`http://${URL}:4000/api/users/profile`);
       if (!response.ok) throw new Error("Failed to fetch user profile");
       const userData = await response.json();
       return userData._id;
@@ -46,7 +48,7 @@ const PreviousReports = ({ navigation }) => {
       }
 
       // Fetch reports for this user
-      const response = await fetch(`http://192.168.1.65:4000/api/requests/${id}`);
+      const response = await fetch(`http://${URL}:4000/api/requests/${id}`);
       if (!response.ok) throw new Error("Failed to fetch reports");
 
       const fetchedReports = await response.json();
@@ -85,7 +87,7 @@ const PreviousReports = ({ navigation }) => {
           onPress: async () => {
             try {
               const response = await fetch(
-                `http://192.168.1.65:4000/api/requests/clear-all/${userId}`,
+                `http://${URL}:4000/api/requests/clear-all/${userId}`,
                 { method: "DELETE" }
               );
               if (!response.ok) throw new Error("Failed to clear all reports");
@@ -109,7 +111,7 @@ const PreviousReports = ({ navigation }) => {
         onPress: async () => {
           try {
             const response = await fetch(
-              `http://192.168.1.65:4000/api/requests/${reportId}`,
+              `http://${URL}:4000/api/requests/${reportId}`,
               { method: "DELETE" }
             );
             if (!response.ok) throw new Error("Failed to delete report");
@@ -215,7 +217,7 @@ const PreviousReports = ({ navigation }) => {
       {report.image && (
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: `http://192.168.1.65:4000/api${report.image}` }}
+            source={{ uri: `http://${URL}:4000/api${report.image}` }}
             style={styles.reportImage}
           />
         </View>
