@@ -30,30 +30,23 @@ export default function HomeScreen({ navigation, route }) {
 
   const getSeverityColor = (level) => {
     switch (level) {
-      case "Critical":
-        return "#dc2626"
       case "High":
         return "#ea580c"
       case "Medium":
         return "#d97706"
       case "Low":
         return "#16a34a"
-      default:
-        return "#6b7280"
     }
   }
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Reported":
       case "pending":
         return "#dc2626"
-      case "In Progress":
+      case "verified":
         return "#d97706"
       case "solved":
         return "#16a34a"
-      default:
-        return "#6b7280"
     }
   }
 
@@ -88,10 +81,11 @@ export default function HomeScreen({ navigation, route }) {
                   </View>
                 </View>
 
-                <Text style={styles.reportDescription}>{report.description || report.location}</Text>
+                <Text style={styles.reportDescription}>{report.description}</Text>
 
                 {report.image && (
-                  <Image source={{ uri: report.image }} style={{ width: "100%", height: 200, borderRadius: 8, marginBottom: 8 }} />
+                  <Image source={{ uri: `http://${URL}:4000/api${report.image}` }} style={{ width: "100%", height: 200, borderRadius: 8, marginBottom: 8 }} />
+                   
                 )}
 
                 <View style={styles.reportDetails}>

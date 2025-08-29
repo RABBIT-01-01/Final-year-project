@@ -1,44 +1,78 @@
 "use client"
 
-import { useState } from "react"
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Alert } from "react-native"
+import { useState, useEffect } from "react"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Alert, ActivityIndicator } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { CommonActions } from "@react-navigation/native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import URL from "../config"
 
 interface UserProfile {
   name: string
   email: string
   phone: string
   team: string
-  role: string
-  employeeId: string
 }
 
 interface UserStats {
   reportsCompleted: number
-  averageResponseTime: string
   currentAssignments: number
-  totalHoursWorked: number
 }
 
 export default function ProfileScreen({ navigation }) {
   const [isEditing, setIsEditing] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<UserProfile>({
-    name: "John Smith",
-    email: "john.smith@maintenance.gov",
-    phone: "+1 (555) 123-4567",
-    team: "Team Alpha",
-    role: "Senior Maintenance Technician",
-    employeeId: "MT-2024-001",
+    name: "",
+    email: "",
+    phone: "",
+    team: "",
   })
 
-  const [stats] = useState<UserStats>({
-    reportsCompleted: 127,
-    averageResponseTime: "2.3 hours",
-    currentAssignments: 5,
-    totalHoursWorked: 1240,
+  const [stats, setStats] = useState<UserStats>({
+    reportsCompleted: 0,
+    currentAssignments: 0,
   })
+
+  // Fetch profile data + stats
+  useEffect(() => {
+    const fetchProfileAndStats = async () => {
+      try {
+        // Fetch profile
+        const resProfile = await fetch(`http://${URL}:4000/api/users/profile`)
+        const dataProfile = await resProfile.json()
+
+        const userProfile: UserProfile = {
+          name: dataProfile.fullname,
+          email: dataProfile.email,
+          phone: dataProfile.phone,
+          team: dataProfile.maintenance_team,
+        }
+        setProfile(userProfile)
+
+        // Fetch stats using maintenance team
+        if (userProfile.team) {
+          const resStats = await fetch(`http://${URL}:4000/api/requests/team/${userProfile.team}`)
+          const requests = await resStats.json()
+
+          const reportsCompleted = requests.filter((r: any) => r.status === "solved").length
+          const currentAssignments = requests.filter((r: any) => r.status === "pending").length
+
+          setStats({
+            reportsCompleted,
+            currentAssignments,
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching profile/stats:", error)
+        Alert.alert("Error", "Failed to load profile & stats")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfileAndStats()
+  }, [])
 
   const handleSaveProfile = () => {
     setIsEditing(false)
@@ -46,28 +80,35 @@ export default function ProfileScreen({ navigation }) {
   }
 
   const handleLogout = () => {
-      Alert.alert("Logout", "Are you sure you want to logout?", [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await AsyncStorage.removeItem("@user_token")
-              // Reset navigation stack to login screen
-              navigation.dispatch(
-                CommonActions.reset({
-                  index: 0,
-                  routes: [{ name: "Login" }],
-                }),
-              )
-            } catch (error) {
-              Alert.alert("Error", "Failed to logout")
-            }
-          },
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await AsyncStorage.removeItem("@user_token")
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: "Login" }],
+              }),
+            )
+          } catch (error) {
+            Alert.alert("Error", "Failed to logout")
+          }
         },
-      ])
-    }
+      },
+    ])
+  }
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    )
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -84,7 +125,6 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={styles.headerInfo}>
           <Text style={styles.userName}>{profile.name}</Text>
-          <Text style={styles.userRole}>{profile.role}</Text>
           <Text style={styles.userTeam}>{profile.team}</Text>
         </View>
 
@@ -100,21 +140,15 @@ export default function ProfileScreen({ navigation }) {
             <Text style={styles.statNumber}>{stats.reportsCompleted}</Text>
             <Text style={styles.statLabel}>Reports Completed</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.averageResponseTime}</Text>
-            <Text style={styles.statLabel}>Avg Response Time</Text>
-          </View>
+
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{stats.currentAssignments}</Text>
             <Text style={styles.statLabel}>Current Assignments</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.totalHoursWorked}</Text>
-            <Text style={styles.statLabel}>Total Hours</Text>
-          </View>
         </View>
       </View>
 
+      {/* Profile Info Section */}
       <View style={styles.profileContainer}>
         <Text style={styles.sectionTitle}>Profile Information</Text>
 
@@ -164,16 +198,6 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.fieldValue}>{profile.team}</Text>
         </View>
 
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Role</Text>
-          <Text style={styles.fieldValue}>{profile.role}</Text>
-        </View>
-
-        <View style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>Employee ID</Text>
-          <Text style={styles.fieldValue}>{profile.employeeId}</Text>
-        </View>
-
         {isEditing && (
           <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
             <Text style={styles.saveButtonText}>Save Changes</Text>
@@ -181,6 +205,7 @@ export default function ProfileScreen({ navigation }) {
         )}
       </View>
 
+      {/* Actions */}
       <View style={styles.actionsContainer}>
         <TouchableOpacity style={styles.actionButton}>
           <Ionicons name="settings-outline" size={20} color="#6b7280" />
@@ -208,6 +233,12 @@ export default function ProfileScreen({ navigation }) {
     </ScrollView>
   )
 }
+
+
+
+
+
+
 
 const styles = StyleSheet.create({
   container: {

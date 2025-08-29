@@ -58,7 +58,7 @@ export default function Maintainance({ route }: { route: RouteProp<any, any> }) 
           options={{ title: "Road Hazards" }}
         />
         <Tab.Screen name="Map" component={MapScreen}  initialParams={{ maintenanceTeam }} options={{ title: "Reports Map" }} />
-        <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: "Profile" }} />
+        <Tab.Screen name="Profile" component={ProfileScreen} initialParams={{ maintenanceTeam }} options={{ title: "Profile" }} />
       </Tab.Navigator>
     </>
   )

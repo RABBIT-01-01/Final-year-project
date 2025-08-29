@@ -1,50 +1,16 @@
 import React, { useEffect, useState } from "react"
-import { View, StyleSheet, Alert } from "react-native"
+import { View, StyleSheet, Alert, ActivityIndicator } from "react-native"
 import { WebView } from "react-native-webview"
 import * as Location from "expo-location"
+import URL from "../config"
 
-export default function MapScreen() {
+export default function MapScreen({ route }) {
+  const { maintenanceTeam } = route.params || {}
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null)
+  const [reports, setReports] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const reports = [
-    {
-      id: "1",
-      type: "Pothole",
-      description: "Large pothole causing vehicle damage",
-      latitude: 27.7172,
-      longitude: 85.324,
-      priority: "High",
-      status: "In Progress",
-    },
-    {
-      id: "2",
-      type: "Debris",
-      description: "Tree branch blocking lane",
-      latitude: 27.72,
-      longitude: 85.328,
-      priority: "Critical",
-      status: "Reported",
-    },
-    {
-      id: "3",
-      type: "Sign Damage",
-      description: "Stop sign knocked over",
-      latitude: 27.715,
-      longitude: 85.321,
-      priority: "Medium",
-      status: "Resolved",
-    },
-    {
-      id: "4",
-      type: "Crack",
-      description: "Small road crack, not urgent",
-      latitude: 27.713,
-      longitude: 85.326,
-      priority: "Low",
-      status: "Reported",
-    },
-  ]
-
+  // Get Current Location
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync()
@@ -59,6 +25,42 @@ export default function MapScreen() {
       })
     })()
   }, [])
+
+  // Fetch reports from API
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const response = await fetch(`http://${URL}:4000/api/requests/team/${maintenanceTeam}`)
+        const data = await response.json()
+        // Normalize data into same structure used by leaflet
+        const formatted = data.map((item: any) => ({
+          id: item._id,
+          type: item.issueType,
+          description: item.description,
+          latitude: parseFloat(item.coordinates.latitude),
+          longitude: parseFloat(item.coordinates.longitude),
+          priority: item.severityLevel,
+          status: item.status,
+          image: item.image ? `http://${URL}:4000${item.image}` : null,
+        }))
+        setReports(formatted)
+      } catch (error) {
+        console.error("Error fetching reports:", error)
+        Alert.alert("Error", "Failed to fetch reports")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchReports()
+  }, [maintenanceTeam])
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    )
+  }
 
   const leafletHTML = `
     <!DOCTYPE html>
@@ -93,7 +95,8 @@ export default function MapScreen() {
       <div id="map"></div>
       <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
       <script>
-        var map = L.map('map' ,  { attributionControl: false }).setView([${location?.latitude || 27.7172}, ${location?.longitude || 85.324}], 14);
+        var map = L.map('map', { attributionControl: false })
+          .setView([${location?.latitude || 27.7172}, ${location?.longitude || 85.324}], 14);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 19,
@@ -104,7 +107,6 @@ export default function MapScreen() {
 
         function getColor(priority) {
           switch(priority) {
-            case "Critical": return "black";
             case "High": return "red";
             case "Medium": return "orange";
             case "Low": return "green";
@@ -125,23 +127,22 @@ export default function MapScreen() {
             "<div class='popup-title'>" + r.type + "</div>" +
             "<div>" + r.description + "</div>" +
             "<div>Priority: " + r.priority + "</div>" +
-            "<div>Status: " + r.status + "</div>"
+            "<div>Status: " + r.status + "</div>"+
+            (r.image ? "<div><img src='" + r.image + "' alt='Report Image' style='width:100%;height:auto;margin-top:5px;'/></div>" : "")
           );
         });
 
         // Add current location marker
         ${
           location
-            ? `
-          var userMarker = L.circleMarker([${location.latitude}, ${location.longitude}], {
-            radius: 6,
-            fillColor: "#2563eb",
-            color: "#1d4ed8",
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.8
-          }).addTo(map).bindPopup("You are here");
-        `
+            ? `L.circleMarker([${location.latitude}, ${location.longitude}], {
+                radius: 6,
+                fillColor: "#2563eb",
+                color: "#1d4ed8",
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+              }).addTo(map).bindPopup("You are here");`
             : ""
         }
 
