@@ -32,6 +32,7 @@ router.post(
 // Retrieve all reports
 router.get(
   '/',
+  authMiddleware.authUser,
   reportController.getAllReports
 );
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { View, StyleSheet, Alert, ActivityIndicator } from "react-native"
+import { View, StyleSheet, Alert, ActivityIndicator, TouchableOpacity, Text } from "react-native"
 import { WebView } from "react-native-webview"
 import * as Location from "expo-location"
 import URL from "../config"
@@ -27,30 +27,31 @@ export default function MapScreen({ route }) {
   }, [])
 
   // Fetch reports from API
-  useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        const response = await fetch(`http://${URL}:4000/api/requests/team/${maintenanceTeam}`)
-        const data = await response.json()
-        // Normalize data into same structure used by leaflet
-        const formatted = data.map((item: any) => ({
-          id: item._id,
-          type: item.issueType,
-          description: item.description,
-          latitude: parseFloat(item.coordinates.latitude),
-          longitude: parseFloat(item.coordinates.longitude),
-          priority: item.severityLevel,
-          status: item.status,
-          image: item.image ? `http://${URL}:4000${item.image}` : null,
-        }))
-        setReports(formatted)
-      } catch (error) {
-        console.error("Error fetching reports:", error)
-        Alert.alert("Error", "Failed to fetch reports")
-      } finally {
-        setLoading(false)
-      }
+  const fetchReports = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch(`http://${URL}:4000/api/requests/team/${maintenanceTeam}`)
+      const data = await response.json()
+      const formatted = data.map((item: any) => ({
+        id: item._id,
+        type: item.issueType,
+        description: item.description,
+        latitude: parseFloat(item.coordinates.latitude),
+        longitude: parseFloat(item.coordinates.longitude),
+        priority: item.severityLevel,
+        status: item.status,
+        image: item.image ? `http://${URL}:4000${item.image}` : null,
+      }))
+      setReports(formatted)
+    } catch (error) {
+      console.error("Error fetching reports:", error)
+      Alert.alert("Error", "Failed to fetch reports")
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchReports()
   }, [maintenanceTeam])
 
@@ -132,7 +133,6 @@ export default function MapScreen({ route }) {
           );
         });
 
-        // Add current location marker
         ${
           location
             ? `L.circleMarker([${location.latitude}, ${location.longitude}], {
@@ -146,7 +146,6 @@ export default function MapScreen({ route }) {
             : ""
         }
 
-        // Add Legend
         var legend = L.control({position: "bottomright"});
         legend.onAdd = function (map) {
           var div = L.DomUtil.create("div", "legend");
@@ -164,16 +163,29 @@ export default function MapScreen({ route }) {
 
   return (
     <View style={styles.container}>
+      {/* Refresh Button */}
+      <TouchableOpacity style={styles.refreshButton} onPress={fetchReports}>
+        <Text style={styles.refreshText}>🔄 Refresh</Text>
+      </TouchableOpacity>
+
       <WebView originWhitelist={["*"]} source={{ html: leafletHTML }} style={styles.map} />
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  map: { flex: 1 },
+  refreshButton: {
+    backgroundColor: "#2563eb",
+    padding: 5,
+    borderRadius: 3,
+    alignItems: "center",
+    margin: 5,
   },
-  map: {
-    flex: 1,
+  refreshText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 })

@@ -17,3 +17,8 @@ module.exports.createUser= async({
     })
     return user;
 }
+
+module.exports.updateUser= async(id,updateData)=>{
+    const user = await userModel.findByIdAndUpdate(id,updateData,{new:true});
+    return user;
+}

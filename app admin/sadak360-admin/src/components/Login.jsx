@@ -2,20 +2,8 @@
 
 import { useState } from "react";
 import { useAuth } from "./auth-provider";
-import {
-  Button,
-  Input,
-  Label,
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  Alert,
-  AlertDescription,
-} from "./Ui";
 import { Loader2, Eye, EyeOff, Shield } from "lucide-react";
+import "animate.css";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -48,112 +36,158 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md shadow-2xl rounded-2xl border border-gray-200">
-        <CardHeader className="space-y-3 text-center">
-          <div className="flex justify-center">
-            <div className="p-4 bg-indigo-100 rounded-full shadow-inner">
-              <Shield className="h-10 w-10 text-indigo-600" />
+    <div
+      className="d-flex align-items-center justify-content-center min-vh-100"
+      style={{
+        background: "linear-gradient(135deg, #E0F7FA, #E3F2FD)",
+      }}
+    >
+      <div
+        className="card shadow-lg rounded-4 border border-light animate__animated animate__fadeInDown"
+        style={{
+          maxWidth: "420px",
+          width: "100%",
+          animationDuration: "0.8s",
+          backgroundColor: "#FFFFFF",
+        }}
+      >
+        {/* Header */}
+        <div className="card-header text-center border-0 py-4" style={{ backgroundColor: "#FFFFFF" }}>
+          <div className="mb-3 animate__animated animate__zoomIn">
+            <div
+              className="d-inline-flex p-3 rounded-circle shadow"
+              style={{ backgroundColor: "#0D6EFD" }}
+            >
+              <Shield className="text-white" size={32} />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold text-gray-800">
+          <h3 className="card-title fw-bold mb-1 animate__animated animate__fadeIn" style={{ color: "#212529" }}>
             Welcome Back
-          </CardTitle>
-          <CardDescription className="text-gray-500">
+          </h3>
+          <p
+            className="card-text text-muted mb-0 animate__animated animate__fadeIn animate__delay-1s"
+            style={{ color: "#6C757D" }}
+          >
             Sign in to access your admin dashboard
-          </CardDescription>
-        </CardHeader>
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-5">
+          <div className="card-body">
+            {/* Error alert */}
             {error && (
-              <Alert variant="destructive" className="border-red-400 bg-red-50 text-red-700">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <div
+                className="alert d-flex align-items-center animate__animated animate__shakeX"
+                role="alert"
+                style={{
+                  backgroundColor: "#F8D7DA",
+                  color: "#842029",
+                  borderColor: "#F5C2C7",
+                }}
+              >
+                <div>{error}</div>
+              </div>
             )}
 
-            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 shadow-sm">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-medium text-indigo-800">Demo Login</p>
-                  <p className="text-xs text-indigo-600">admin@example.com / admin123</p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={fillDemoCredentials}
-                  disabled={isLoading}
-                  className="hover:bg-indigo-500 hover:text-white"
-                >
-                  Fill
-                </Button>
+            {/* Demo login */}
+            <div
+              className="border rounded p-3 mb-3 d-flex justify-content-between align-items-center animate__animated animate__pulse animate__infinite"
+              style={{
+                backgroundColor: "#CAF0F8",
+                borderColor: "#90E0EF",
+              }}
+            >
+              <div>
+                <p className="mb-0 fw-semibold" style={{ color: "#0077B6" }}>
+                  Demo Login
+                </p>
+                <small style={{ color: "#0096C7" }}>admin@example.com / admin123</small>
               </div>
+              <button
+                type="button"
+                className="btn btn-outline-primary btn-sm"
+                onClick={fillDemoCredentials}
+                disabled={isLoading}
+              >
+                Fill
+              </button>
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="email" className="text-gray-700">
+            {/* Email */}
+            <div className="mb-3">
+              <label htmlFor="email" className="form-label fw-semibold" style={{ color: "#212529" }}>
                 Email Address
-              </Label>
-              <Input
-                id="email"
+              </label>
+              <input
                 type="email"
+                id="email"
+                className="form-control border-primary shadow-sm"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
-                className="focus:ring-2 focus:ring-indigo-400"
+                style={{
+                  transition: "0.3s",
+                  boxShadow: "0 0 0 0 rgba(13,110,253,0)",
+                }}
+                onFocus={(e) => (e.target.style.boxShadow = "0 0 8px rgba(13,110,253,0.5)")}
+                onBlur={(e) => (e.target.style.boxShadow = "0 0 0 0 rgba(13,110,253,0)")}
               />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="password" className="text-gray-700">
+            {/* Password */}
+            <div className="mb-3">
+              <label htmlFor="password" className="form-label fw-semibold" style={{ color: "#212529" }}>
                 Password
-              </Label>
-              <div className="relative">
-                <Input
-                  id="password"
+              </label>
+              <div className="input-group">
+                <input
                   type={showPassword ? "text" : "password"}
+                  id="password"
+                  className="form-control border-primary shadow-sm"
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
-                  className="focus:ring-2 focus:ring-indigo-400"
+                  style={{
+                    transition: "0.3s",
+                    boxShadow: "0 0 0 0 rgba(13,110,253,0)",
+                  }}
+                  onFocus={(e) => (e.target.style.boxShadow = "0 0 8px rgba(13,110,253,0.5)")}
+                  onBlur={(e) => (e.target.style.boxShadow = "0 0 0 0 rgba(13,110,253,0)")}
                 />
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1 h-8 w-8 hover:bg-transparent text-gray-500"
+                  className="btn btn-outline-secondary"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </Button>
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
-          </CardContent>
+          </div>
 
-          <CardFooter>
-            <Button
+          <div className="card-footer bg-white border-0 pb-4 pt-0">
+            <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-md"
+              className="btn btn-primary w-100 fw-semibold d-flex justify-content-center align-items-center animate__animated animate__pulse animate__fast"
               disabled={isLoading}
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  <Loader2 className="me-2 spinner-border spinner-border-sm" size={18} />
                   Signing in...
                 </>
               ) : (
                 "Sign In"
               )}
-            </Button>
-          </CardFooter>
+            </button>
+          </div>
         </form>
-      </Card>
+      </div>
     </div>
   );
 }

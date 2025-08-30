@@ -19,22 +19,25 @@ export default function MapView() {
   useEffect(() => {
     const fetchHazards = async () => {
       try {
-        const response = await fetch("http://localhost:4000/api/requests/");
+        const response = await fetch("http://localhost:4000/api/requests/", {
+          credentials: "include",
+        });
         if (!response.ok) throw new Error("Failed to fetch hazard data");
         const data = await response.json();
-
+        console.log()
         const transformed = data.map((item) => ({
+          id: item._id,
           lat: Math.round(parseFloat(item.coordinates.latitude) * 1e4) / 1e4,
           lng: Math.round(parseFloat(item.coordinates.longitude) * 1e4) / 1e4,
           status: item.status,
           type: item.issueType,
+          location: item.location,
           description: item.description,
           severity: item.severityLevel,
           image: item.image,
           timestamp: item.createdAt,
           reporter: item.reportedBy.fullname,
-          maintenance_team: item.maintenance_team || "Unassigned",
-          id: item._id,
+          maintenance_team: item.maintenance_team ,
         }));
 
         setHazards(transformed);
@@ -56,11 +59,12 @@ export default function MapView() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: "solved" }),
+        credentials: "include",
+        body: JSON.stringify({ status: "verified" }),
       });
       if (!response.ok) throw new Error("Failed to update hazard status");
       const updatedHazard = await response.json();
-      const newStatus = updatedHazard.status || "solved";
+      const newStatus = updatedHazard.status || "verified";
 
       setSelectedHazard((prev) =>
         prev && prev.id === id ? { ...prev, status: newStatus } : prev
@@ -77,13 +81,16 @@ export default function MapView() {
 
   const assignToTeam = async (hazardId, team) => {
     try {
+      console.log("Assigning team:", hazardId, team);
       const response = await fetch(`http://localhost:4000/api/requests/${hazardId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ maintenance_team: team }),
       });
       if (!response.ok) throw new Error("Failed to assign team");
       const updatedHazard = await response.json();
+      const assignedTeam = updatedHazard.maintenance_team || team;
 
       setSelectedHazard((prev) =>
         prev && prev.id === hazardId ? { ...prev, assignedTeam: team } : prev
@@ -92,7 +99,6 @@ export default function MapView() {
       setHazards((prev) =>
         prev.map((h) => (h.id === hazardId ? { ...h, assignedTeam: team } : h))
       );
-
       setShowAssignModal(false);
       setSelectedTeam("");
     } catch (err) {
@@ -174,7 +180,7 @@ export default function MapView() {
           .on("click", () => {
             setSelectedHazard(hazard);
           });
-
+          
         marker.bindTooltip(hazard.type);
       } else {
         const latAvg = cluster.reduce((sum, h) => sum + h.lat, 0) / cluster.length;
@@ -227,176 +233,188 @@ export default function MapView() {
   const getSeverityColor = (severity) => {
     switch (severity) {
       case "High":
-        return "badge badge-danger";
+        return "badge bg-danger";
       case "Medium":
-        return "badge badge-warning";
+        return "badge bg-warning text-dark";
       case "Low":
-        return "badge badge-success";
+        return "badge bg-success";
       default:
-        return "badge badge-secondary";
+        return "badge bg-secondary";
+    }
+  };
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "pending":
+        return "badge bg-warning text-dark";
+      case "solved":
+        return "badge bg-secondary";
+      case "verified":
+        return "badge bg-success";
+      default:
+        return "badge bg-secondary";
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <p>Loading hazard data...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <p className="text-red-600">{error}</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="d-flex justify-content-center align-items-center h-100">Loading hazard data...</div>;
+  if (error) return <div className="d-flex justify-content-center align-items-center h-100 text-danger">{error}</div>;
 
   return (
-    <div className="flex flex-1 h-full">
-      <div className="flex-1 relative">
-        <div ref={mapRef} className="w-full h-full" style={{ minHeight: "600px" }} />
+    <div className="d-flex h-100">
+  {/* Map */}
+  <div className="flex-fill position-relative">
+    <div
+      ref={mapRef}
+      className="w-100 h-100"
+      style={{ minHeight: "600px" }}
+    />
+  </div>
+
+  {/* Hazard Details Side Panel */}
+  {selectedHazard && (
+    <div
+      className="border-start shadow-sm animate__animated animate__slideInRight"
+      style={{
+        width: "340px",
+        background: "linear-gradient(180deg, #f9fafb, #f1f3f6)",
+      }}
+    >
+      <div className="d-flex justify-content-between align-items-center p-3 border-bottom bg-light">
+        <h5 className="fw-bold text-primary m-0">⚠ Hazard Details</h5>
+        <button
+          className="btn btn-outline-danger btn-sm"
+          onClick={() => (setSelectedHazard(null), setShowAssignModal(false))}
+        >
+          <X />
+        </button>
       </div>
 
-      {selectedHazard && (
-        <div className="w-80 border-l bg-white p-4 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Hazard Details</h3>
+      <div className="p-3">
+        {/* Image */}
+        <div className="text-center mb-3">
+          <img
+            src={
+              selectedHazard.image
+                ? `http://localhost:4000/api/${selectedHazard.image.replace(
+                    /^\//,
+                    ""
+                  )}`
+                : "/placeholder.svg"
+            }
+            alt={selectedHazard.type}
+            className="img-fluid rounded shadow-sm"
+            style={{ maxHeight: "180px", objectFit: "cover" }}
+          />
+        </div>
+
+        {/* Type + Status */}
+        <h6 className="fw-bold text-dark">
+          {selectedHazard.type}{" "}
+          <span
+            className={`badge px-2 py-1 ${getStatusColor(
+              selectedHazard.status
+            )}`}
+          >
+            {selectedHazard.status}
+          </span>
+        </h6>
+        <p className="text-muted">{selectedHazard.description}</p>
+
+        {/* Details List */}
+        <ul className="list-unstyled small">
+          <li className="mb-2">
+            <AlertTriangle className="me-2 text-warning" /> Severity:{" "}
+            <span className={getSeverityColor(selectedHazard.severity)}>
+              {selectedHazard.severity}
+            </span>
+          </li>
+          <li className="mb-2">
+            <MapPin className="me-2 text-danger" /> Location:{" "}
+            {selectedHazard.location.split(",").slice(0, 3).join(" ")}...
+          </li>
+          <li className="mb-2">
+            <Calendar className="me-2 text-primary" /> Reported:{" "}
+            {new Date(selectedHazard.timestamp).toLocaleString()}
+          </li>
+          <li className="mb-2">
+            🛠 Management Team:{" "}
+            <span className="fw-semibold text-secondary">
+              {selectedHazard.maintenance_team || "Unassigned"}
+            </span>
+          </li>
+          <li className="mb-2">👤 Reporter: {selectedHazard.reporter}</li>
+          {selectedHazard.assignedTeam && (
+            <li className="mb-2">
+              ✅ Assigned Team: {selectedHazard.assignedTeam}
+            </li>
+          )}
+        </ul>
+
+        {/* Buttons */}
+        <div className="d-grid gap-2 mt-4">
+          <button
+            className="btn btn-success shadow-sm animate__animated animate__pulse"
+            onClick={() => ResolvedHazard(selectedHazard.id)}
+          >
+            ✔ Mark as Resolved
+          </button>
+          <button
+            className="btn btn-outline-primary shadow-sm"
+            onClick={() => setShowAssignModal(true)}
+          >
+            🔧 Assign to Team
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* Assign Modal */}
+  {showAssignModal && (
+    <div className="modal d-block bg-dark bg-opacity-50 animate__animated animate__fadeIn">
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content shadow-lg border-0 rounded-3">
+          <div className="modal-header bg-primary text-white">
+            <h5 className="modal-title">Assign Maintenance Team</h5>
             <button
-              className="btn btn-ghost btn-icon-sm"
-              onClick={() => (setSelectedHazard(null),setShowAssignModal(false))}
+              type="button"
+              className="btn-close btn-close-white"
+              onClick={() => setShowAssignModal(false)}
+            ></button>
+          </div>
+          <div className="modal-body">
+            <select
+              className="form-select shadow-sm"
+              value={selectedTeam}
+              onChange={(e) => setSelectedTeam(e.target.value)}
             >
-              <X className="h-4 w-4" />
+              <option value="">-- Select team --</option>
+              {teams.map((team, index) => (
+                <option key={index} value={team}>
+                  {team}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="modal-footer">
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowAssignModal(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn btn-success shadow-sm"
+              disabled={!selectedTeam}
+              onClick={() => assignToTeam(selectedHazard.id, selectedTeam)}
+            >
+              ✅ Assign
             </button>
           </div>
-          <div className="space-y-4">
-            <img
-              src={
-                selectedHazard.image
-                  ? `http://localhost:4000/api/${selectedHazard.image.replace(/^\//, "")}`
-                  : "/placeholder.svg"
-              }
-              alt={selectedHazard.type}
-              className="w-full h-48 object-cover rounded-lg"
-            />
-
-            <div>
-              <h4 className="font-medium text-lg">{selectedHazard.type}</h4>
-              <h4
-                className={`font-medium text-lg px-3 py-1 rounded-md inline-block ${
-                  selectedHazard.status === "pending"
-                    ? "bg-red-500 text-red-800"
-                    : "bg-green-500 text-green-800"
-                }`}
-              >
-                {selectedHazard.status}
-              </h4>
-              <p className="text-sm text-gray-600 mt-1">{selectedHazard.description}</p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              <span className="text-sm font-medium">Severity:</span>
-              <span className={getSeverityColor(selectedHazard.severity)}>
-                {selectedHazard.severity}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              <span className="text-sm font-medium">Location:</span>
-              <span className="text-sm">
-                {selectedHazard.lat.toFixed(4)}, {selectedHazard.lng.toFixed(4)}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <span className="text-sm font-medium">Reported:</span>
-              <span className="text-sm">
-                {new Date(selectedHazard.timestamp).toLocaleString()}
-              </span>
-            </div>
-
-             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              <span className="text-sm font-medium">assigned to:</span>
-              <span className="text-sm">
-                {selectedHazard.maintainance_team}
-              </span>
-            </div>
-
-            <div>
-              <span className="text-sm font-medium">Reporter:</span>
-              <span className="text-sm ml-2">{selectedHazard.reporter}</span>
-            </div>
-
-            {selectedHazard.assignedTeam && (
-              <div>
-                <span className="text-sm font-medium">Assigned Team:</span>
-                <span className="text-sm ml-2">{selectedHazard.assignedTeam}</span>
-              </div>
-            )}
-
-            <div className="pt-4 space-y-2">
-              <button
-                className="btn btn-primary w-full"
-                onClick={() => ResolvedHazard(selectedHazard.id)}
-              >
-                Mark as Resolved
-              </button>
-              <button
-                className="btn btn-secondary w-full"
-                onClick={() => setShowAssignModal(true)}
-              >
-                Assign to Team
-              </button>
-            </div>
-          </div>
         </div>
-      )}
-
-       {/* {selectedHazard && (
-        <div className="w-80 border-l bg-white p-4 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Hazard Details</h3> */}
-
-     {showAssignModal && (
-  <div className="  flex items-center justify-center bg-black bg-opacity-50 overflow-y-auto ">
-    <div className="bg-white rounded-lg shadow-lg p-6 w-80 relative ">
-      <h3 className="text-lg font-semibold mb-4">Assign here</h3>
-      <select
-        className="w-full border rounded-md p-2 mb-4"
-        value={selectedTeam}
-        onChange={(e) => setSelectedTeam(e.target.value)}
-      >
-        <option value="">-- Select maintainance team --</option>
-        {teams.map((team, index) => (
-          <option key={index} value={team}>
-            {team}
-          </option>
-        ))}
-      </select>
-      <div className="flex justify-end gap-2">
-        <button
-          className="btn btn-ghost"
-          onClick={() => setShowAssignModal(false)}
-        >
-          Cancel
-        </button>
-        <button
-          className="btn btn-primary"
-          disabled={!selectedTeam}
-          onClick={() => assignToTeam(selectedHazard.id, selectedTeam)}
-        >
-          Assign
-        </button>
       </div>
     </div>
-  </div>
-)}
+  )}
+</div>
 
-    </div>
   );
 }

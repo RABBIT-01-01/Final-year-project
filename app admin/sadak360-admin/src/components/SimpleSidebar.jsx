@@ -2,106 +2,180 @@
 
 import { useState } from "react"
 import { NavLink } from "react-router-dom"
-import { Menu, X, AlertTriangle } from 'lucide-react'
+import { Menu, X, ChevronDown } from "lucide-react"
 import { useAuth } from "./auth-provider"
-import { User, LogOut } from 'lucide-react'
+import { User, LogOut } from "lucide-react"
+import "animate.css"
+
+// ✅ import your logo
+import img from "../assets/logo.png"
+
+import { useEffect } from "react";
+import { Tooltip } from "bootstrap";
+
+
 
 function SimpleSidebar({ navigation, children }) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(true)
+  const [collapsed, setCollapsed] = useState(false)
   const { user, logout } = useAuth()
 
-  return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Mobile backdrop */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" 
-          onClick={() => setIsOpen(false)} 
-        />
-      )}
+  useEffect(() => {
+    const tooltipTriggerList = [].slice.call(
+      document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new Tooltip(tooltipTriggerEl);
+    });
+  }, [collapsed]);
 
+  return (
+    <div className="d-flex vh-100">
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
+        className={`shadow-lg d-flex flex-column animate__animated ${
+          isOpen ? "animate__slideInLeft" : "animate__slideOutLeft d-none"
         }`}
+        style={{
+          width: collapsed ? "90px" : "280px",
+          background: "linear-gradient(180deg, #1f2937, #111827)",
+          color: "#f3f4f6",
+          zIndex: 1050,
+        }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-lg">
-              {/* <AlertTriangle className="w-4 h-4" /> */}
-            </div>
-            <div className="flex flex-col">
-              <span className="font-semibold text-gray-900">Sadak360</span>
-              <span className="text-xs text-gray-500">Admin Dashboard</span>
-            </div>
-          </div>
-          <button 
-            onClick={() => setIsOpen(false)} 
-            className="lg:hidden p-1 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <X className="w-5 h-5" />
-          </button>
+        <div className="d-flex align-items-center justify-content-between border-bottom border-secondary px-3 py-3">
+  <div className="d-flex align-items-center gap-2">
+    <img
+      src={img}
+      alt="Sadak360 Logo"
+      style={{
+        width: collapsed ? "40px" : "45px",
+        height: "45px",
+        objectFit: "contain",
+      }}
+      className="rounded shadow-sm bg-white p-1"
+    />
+
+    {!collapsed && (
+      <div className="d-flex flex-column justify-content-center">
+        <div className="fw-bold text-light fs-5" style={{ marginTop: "8px" }}>
+          Sadak360
         </div>
+        <div className="small text-muted">Admin Dashboard</div>
+      </div>
+    )}
+  </div>
+
+  {!collapsed && (
+    <button
+      onClick={() => setIsOpen(false)}
+      className="btn btn-sm btn-outline-light d-lg-none"
+    >
+      <X size={18} />
+    </button>
+  )}
+</div>
+
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-4 space-y-1">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Navigation</div>
+        <nav className="flex-grow-1 overflow-auto p-2">
+          <div
+            className={`text-uppercase small mb-2 ${
+              collapsed ? "text-center text-secondary" : "text-muted"
+            }`}
+          >
+            Navigation
+          </div>
+
           {navigation.map((item) => (
-            <NavLink
-              key={item.href}
-              to={item.href}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                  isActive 
-                    ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700" 
-                    : "text-gray-700 hover:bg-gray-100"
-                }`
-              }
-              onClick={() => setIsOpen(false)}
-            >
-              <item.icon className="w-4 h-4" />
-              <span>{item.title}</span>
-            </NavLink>
+            <div key={item.href} className="mb-1">
+              <NavLink
+                to={item.href}
+                className={({ isActive }) =>
+                  `d-flex align-items-center gap-2 px-3 py-2 rounded text-decoration-none fw-medium sidebar-nav-link ${
+                    isActive
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-light"
+                  } ${collapsed ? "justify-content-center" : ""}`
+                }
+                // ✅ Tooltip only when collapsed
+                data-bs-toggle={collapsed ? "tooltip" : ""}
+                data-bs-placement="right"
+                title={collapsed ? item.title : ""}
+              >
+                <item.icon size={20} />
+                {!collapsed && <span>{item.title}</span>}
+              </NavLink>
+
+            </div>
           ))}
         </nav>
+
+        {/* Collapse toggle */}
+        <div className="border-top border-secondary p-2 text-center">
+          <button
+            className="btn btn-outline-light btn-sm w-100 d-flex align-items-center justify-content-center gap-2"
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            <ChevronDown
+              className={`transition ${collapsed ? "rotate-180" : ""}`}
+              size={16}
+            />
+            {!collapsed && "Collapse Sidebar"}
+          </button>
+        </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Main content */}
+          <div className="flex-grow-1 d-flex flex-column">
         {/* Top bar */}
-        <header className="flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200 lg:px-6">
-          <button 
-            onClick={() => setIsOpen(true)} 
-            className="lg:hidden p-1 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <h1 className="text-lg font-semibold text-gray-900">
-            {navigation.find((item) => location.pathname === item.href)?.title || "Dashboard"}
+        <header
+          className="d-flex align-items-center justify-content-between border-bottom px-4 py-2 shadow-sm"
+          style={{
+            backgroundColor: "#F8F9FA", // light grey matching sidebar
+          }}
+        >
+          <h1 className="h5 mb-0 fw-semibold text-dark">
+            {navigation.find((item) => location.pathname === item.href)?.title ||
+              "Dashboard"}
           </h1>
 
-
-           <div className="top-bar-right">
-            <div className="user-info">
+          <div className="d-flex align-items-center gap-3">
+            <div className="d-flex align-items-center gap-2">
               <User size={20} />
-              <span>{user?.name}</span>
+              <span className="fw-semibold text-dark">{user?.name}</span>
             </div>
-            <button className="logout-button" onClick={logout}>
+            <button
+              className="btn btn-danger btn-sm d-flex align-items-center gap-1 shadow-sm"
+              onClick={logout}
+            >
               <LogOut size={16} />
               Logout
             </button>
           </div>
-
-
-
-          <div className="w-6 lg:hidden"></div> {/* Spacer for mobile */}
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto bg-gray-50">{children}</main>
+        <main
+          className="flex-grow-1 overflow-auto p-4 animate__animated animate__fadeIn"
+          style={{
+            backgroundColor: "#E9ECEF", // slightly darker grey for content area
+          }}
+        >
+          {children}
+        </main>
       </div>
+
+
+      {/* Floating toggle button */}
+      <button
+        className="btn btn-primary position-fixed bottom-0 start-0 m-3 shadow rounded-circle floating-toggle"
+        style={{ zIndex: 2000, width: "55px", height: "55px" }}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {isOpen ? <X size={22} /> : <Menu size={22} />}
+      </button>
     </div>
   )
 }

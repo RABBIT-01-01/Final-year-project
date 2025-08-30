@@ -1,5 +1,11 @@
 /* Leaflet CSS - Must be imported first */
 @import url("https://unpkg.com/leaflet@1.7.1/dist/leaflet.css");
+@import "bootstrap/dist/css/bootstrap.min.css";
+/* @import "bootstrap/dist/js/bootstrap.bundle.min.js"; */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* CSS Reset and Base Styles */
 * {

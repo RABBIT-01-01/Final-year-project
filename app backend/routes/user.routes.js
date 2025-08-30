@@ -19,4 +19,7 @@ router.post('/login', [
 ], userController.loginUser);
 router.get('/profile',authMiddleware.authUser, userController.getUserProfile);
 router.get('/logout', authMiddleware.authUser, userController.logoutUser);
+router.get('/', authMiddleware.authUser, userController.getAllUsers);
+router.delete('/:id', authMiddleware.authUser, userController.deleteUser);
+router.put('/:id', authMiddleware.authUser, userController.updateUser);
 module.exports = router;

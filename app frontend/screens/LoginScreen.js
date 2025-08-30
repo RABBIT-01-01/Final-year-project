@@ -59,7 +59,6 @@ const LoginScreen = ({ navigation }) => {
     setIsLoading(true)
     try {
       console.log("Sending login request to server...", email, password)
-      // const response = await fetch(`http://${URL}:4000/api/users/login`, {
       const response = await fetch(`http://${URL}:4000/api/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

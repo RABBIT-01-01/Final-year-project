@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard"
 import MapView from "./pages/MapView"
 import Analytics from "./pages/Analytics"
 import BrowseHazards from "./pages/BrowseHazards"
+import Maintanance_report from "./pages/Maintanance_report"
 import Login from "./components/Login"
 import { AuthProvider } from "./components/auth-provider"
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -17,15 +18,18 @@ function AppRouter() {
         <Route
           path="/*"
           element={
-            // <ProtectedRoute>
+            <ProtectedRoute>
               <AdminLayout />
-            // </ProtectedRoute>
+             </ProtectedRoute>
           }
         >
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="map" element={<MapView />} />
-          {/* <Route path="analytics" element={<Analytics />} /> */}
+          <Route path="analytics" element={<Analytics />} />
           <Route path="hazards" element={<BrowseHazards />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="maintanance_report" element={<Maintanance_report />} />
+
         </Route>
       </Routes>
     </AuthProvider>
