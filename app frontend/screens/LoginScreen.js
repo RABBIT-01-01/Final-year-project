@@ -65,8 +65,8 @@ const LoginScreen = ({ navigation }) => {
         body: JSON.stringify({ email, password }),
       })
       
-      alert("Request sent to server")
-      // alert("Response: " + JSON.stringify(response))
+      
+      
 
       const data = await response.json()
 

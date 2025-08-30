@@ -240,23 +240,6 @@ export default function ProfileScreen({ navigation }) {
       </View>
 
       <View style={styles.actionsContainer}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="settings-outline" size={20} color="#6b7280" />
-          <Text style={styles.actionButtonText}>Settings</Text>
-          <Ionicons name="chevron-forward" size={20} color="#6b7280" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="help-circle-outline" size={20} color="#6b7280" />
-          <Text style={styles.actionButtonText}>Help & Support</Text>
-          <Ionicons name="chevron-forward" size={20} color="#6b7280" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name="document-text-outline" size={20} color="#6b7280" />
-          <Text style={styles.actionButtonText}>Terms & Privacy</Text>
-          <Ionicons name="chevron-forward" size={20} color="#6b7280" />
-        </TouchableOpacity>
 
         <TouchableOpacity style={[styles.actionButton, styles.logoutButton]} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color="#dc2626" />

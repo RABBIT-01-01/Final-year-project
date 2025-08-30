@@ -83,19 +83,19 @@ const ReportRoadIssue = ({ navigation }) => {
       console.log("Saving report:",form)
       // POST to backend API
 
-      // const response = await fetch(`http://${URL}:4000/api/requests/`, {
-      //   method: "POST",
-      //   body: form,
-      // })
+      const response = await fetch(`http://${URL}:4000/api/requests/`, {
+        method: "POST",
+        body: form,
+      })
 
-      // if (!response.ok) {
-      //   // throw new Error(`Server error: ${response.status}`)
-      //   throw new Error("message"+ response.statusText)
-      // }
+      if (!response.ok) {
+        // throw new Error(`Server error: ${response.status}`)
+        throw new Error("message"+ response.statusText)
+      }
 
-      // const result = await response.json()
-      // console.log("Report submitted:", result)
-      // Alert.alert("Success", "Road issue reported successfully!")
+      const result = await response.json()
+      console.log("Report submitted:", result)
+      Alert.alert("Success", "Road issue reported successfully!")
 
       // Reset form
       setDescription("")

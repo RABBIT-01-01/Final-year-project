@@ -14,9 +14,9 @@ const navigation = [
     href: "/map",
   },
   {
-    title: "Analytics",
+    title: "View and Register",
     icon: BarChart3,
-    href: "/analytics",
+    href: "/register",
   },
   {
     title: "Browse Hazards",

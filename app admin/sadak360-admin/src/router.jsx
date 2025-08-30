@@ -25,7 +25,7 @@ function AppRouter() {
         >
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="map" element={<MapView />} />
-          <Route path="analytics" element={<Analytics />} />
+          <Route path="register" element={<Analytics />} />
           <Route path="hazards" element={<BrowseHazards />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
           <Route path="maintanance_report" element={<Maintanance_report />} />

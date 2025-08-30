@@ -4,6 +4,43 @@ import { useState, useEffect, useMemo } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { Search, MapPin, Calendar, User, Eye } from "lucide-react"
 
+// Haversine formula to calculate distance in meters
+const getDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371000 // Earth's radius in meters
+  const toRad = (deg) => deg * (Math.PI / 180)
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
+// Function to mark duplicates
+const markDuplicates = (hazards) => {
+  const duplicates = []
+  const visited = new Set()
+  for (let i = 0; i < hazards.length; i++) {
+    if (visited.has(i)) continue
+    const dupGroup = [hazards[i]]
+    const [lat1, lon1] = hazards[i].coordinates.split(",").map(Number)
+    for (let j = i + 1; j < hazards.length; j++) {
+      if (hazards[i].type !== hazards[j].type) continue
+      const [lat2, lon2] = hazards[j].coordinates.split(",").map(Number)
+      const distance = getDistance(lat1, lon1, lat2, lon2)
+      if (distance <= 50) { // 5–10 meters range
+        dupGroup.push(hazards[j])
+        visited.add(j)
+      }
+    }
+    if (dupGroup.length > 1) {
+      duplicates.push(dupGroup)
+    }
+  }
+  return duplicates
+}
+
 function BrowseHazards() {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
@@ -11,6 +48,8 @@ function BrowseHazards() {
   const [hazards, setHazards] = useState([])
   const [filteredHazards, setFilteredHazards] = useState([])
   const [activeTab, setActiveTab] = useState("all")
+  const [duplicates, setDuplicates] = useState([])
+  const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false)
 
   // Fetch hazard data
   useEffect(() => {
@@ -28,7 +67,7 @@ function BrowseHazards() {
             severity: item.severityLevel,
             status: item.status.charAt(0).toUpperCase() + item.status.slice(1),
             location: item.location,
-            coordinates: `${item.coordinates.latitude}, ${item.coordinates.longitude}`,
+            coordinates: `${item.coordinates.latitude},${item.coordinates.longitude}`,
             reporter: item.reportedBy.fullname,
             timestamp: item.createdAt,
             image: item.image || "/placeholder.svg?height=200&width=300",
@@ -36,6 +75,7 @@ function BrowseHazards() {
           }))
           setHazards(formatted)
           setFilteredHazards(formatted)
+          setDuplicates(markDuplicates(formatted))
         } else {
           console.error("Failed to fetch hazards:", response.statusText)
         }
@@ -76,8 +116,12 @@ function BrowseHazards() {
     if (typeFilter !== "all") filtered = filtered.filter((h) => h.type.toLowerCase() === typeFilter)
     if (severityFilter !== "all") filtered = filtered.filter((h) => h.severity.toLowerCase() === severityFilter)
     if (statusFilter !== "all") filtered = filtered.filter((h) => h.status.toLowerCase().replace(" ", "-") === statusFilter)
+    if (showDuplicatesOnly) {
+      const dupIds = new Set(duplicates.flat().map((h) => h.id))
+      filtered = filtered.filter((h) => dupIds.has(h.id))
+    }
     setFilteredHazards(filtered)
-  }, [searchTerm, typeFilter, severityFilter, statusFilter, hazards])
+  }, [searchTerm, typeFilter, severityFilter, statusFilter, hazards, showDuplicatesOnly, duplicates])
 
   const getSeverityColor = (severity) => {
     switch (severity) {
@@ -115,8 +159,6 @@ function BrowseHazards() {
     return groups
   }, [filteredHazards])
 
-  const handleViewDetails = (id) => navigate(`/hazards/${id}`)
-
   const typeOptions = [
     { value: "all", label: "All Types" },
     ...Array.from(new Set(hazards.map((h) => h.type.toLowerCase()))).map((type) => ({
@@ -133,32 +175,48 @@ function BrowseHazards() {
   const statusOptions = [
     { value: "all", label: "All Status" },
     { value: "pending", label: "Pending" },
-    { value: "in-progress", label: "In Progress" },
-    { value: "resolved", label: "Resolved" },
+    { value: "solved", label: "Solved" },
+    { value: "verified", label: "Verified" },
   ]
 
-  const renderHazardCard = (hazard) => (
+  const renderHazardCard = (hazard) => {
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this hazard report?")) return
+    try {
+      const response = await fetch(`http://localhost:4000/api/requests/${hazard.id}`, {
+        method: "DELETE",
+        credentials: "include"
+      })
+      if (response.ok) {
+        alert("Hazard deleted successfully!")
+        // Remove deleted hazard from state
+        setHazards(prev => prev.filter(h => h.id !== hazard.id))
+        setFilteredHazards(prev => prev.filter(h => h.id !== hazard.id))
+        setDuplicates(markDuplicates(hazards.filter(h => h.id !== hazard.id)))
+      } else {
+        const err = await response.text()
+        alert("Failed to delete hazard: " + err)
+      }
+    } catch (error) {
+      console.error("Delete error:", error)
+      alert("Error deleting hazard")
+    }
+  }
+
+  return (
     <div key={hazard.id} className="col mb-4">
       <div className="card h-100 shadow-sm">
-        {/* <img
-          src={ hazard.image
-                ?` http://localhost:4000/api/${hazard.image.replace(/^\//, "")}`
-                : "/placeholder.svg"}
+        <img
+          src={
+            hazard.image
+              ? `http://localhost:4000/api/${hazard.image.replace(/^\//, "")}`
+              : "/placeholder.svg"
+          }
           className="card-img-top"
           alt={hazard.type}
-          style={{ height: "200px", objectFit: "cover" }}
-        /> */}
-        <img
-            src={
-              hazard.image
-                ?` http://localhost:4000/api/${hazard.image.replace(/^\//, "")}`
-                : "/placeholder.svg"
-            }
-            className="card-img-top"
-            alt={hazard.type}
-            // className="w-full h-full object-cover"
-          />
-        <div className="card-body">
+        />
+        <div className="card-body d-flex flex-column">
           <h5 className="card-title">{hazard.type}</h5>
           <p className="card-text">{hazard.description}</p>
           <p>
@@ -171,13 +229,17 @@ function BrowseHazards() {
             <li><User /> Reported by {hazard.reporter}</li>
             <li><User /> Assigned to {hazard.assignedTo}</li>
           </ul>
-          <button className="btn btn-primary w-100" onClick={() => handleViewDetails(hazard.id)}>
-            <Eye className="me-2" /> View Details
-          </button>
+
+          {/* Delete Button */}
+          <div className="mt-auto">
+            <button className="btn btn-danger w-100" onClick={handleDelete}>Delete</button>
+          </div>
         </div>
       </div>
     </div>
   )
+}
+
 
   return (
     <div className="container my-4">
@@ -227,6 +289,16 @@ function BrowseHazards() {
               >
                 {statusOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
+            </div>
+
+            {/* Duplicate Filter Button */}
+            <div className="col-md-2 d-flex align-items-center">
+              <button 
+                className={`btn ${showDuplicatesOnly ? "btn-danger" : "btn-outline-danger"} w-100`}
+                onClick={() => setShowDuplicatesOnly(!showDuplicatesOnly)}
+              >
+                {showDuplicatesOnly ? `Showing Duplicates (${duplicates.flat().length})` : `Show Duplicates (${duplicates.flat().length})`}
+              </button>
             </div>
           </div>
         </div>

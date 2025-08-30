@@ -149,11 +149,11 @@ const PreviousReports = ({ navigation }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Submitted":
+      case "solved":
         return "#007AFF";
-      case "In Progress":
+      case "pending":
         return "#FF9800";
-      case "Resolved":
+      case "verified":
         return "#4CAF50";
       default:
         return "#666";

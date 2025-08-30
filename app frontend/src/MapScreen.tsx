@@ -10,7 +10,7 @@ export default function MapScreen({ route }) {
   const [reports, setReports] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Get Current Location
+  // Get current location
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync()
@@ -57,117 +57,146 @@ export default function MapScreen({ route }) {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={styles.loading}>
         <ActivityIndicator size="large" color="#2563eb" />
       </View>
     )
   }
 
   const leafletHTML = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8" />
-      <title>Leaflet Map</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-      <style>
-        #map { height: 100vh; width: 100vw; }
-        .popup-title { font-weight: bold; }
-        .legend {
-          background: white;
-          padding: 8px;
-          font-size: 14px;
-          line-height: 18px;
-          color: #333;
-          border-radius: 6px;
-          box-shadow: 0 0 5px rgba(0,0,0,0.3);
-        }
-        .legend i {
-          width: 14px;
-          height: 14px;
-          float: left;
-          margin-right: 6px;
-          opacity: 0.9;
-        }
-      </style>
-    </head>
-    <body>
-      <div id="map"></div>
-      <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-      <script>
-        var map = L.map('map', { attributionControl: false })
-          .setView([${location?.latitude || 27.7172}, ${location?.longitude || 85.324}], 14);
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Maintenance Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <style>
+      html, body { margin: 0; padding: 0; height: 100%; }
+      #map { height: 100%; width: 100%; }
+      .leaflet-popup-content-wrapper {
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        font-family: Arial, sans-serif;
+      }
+      .popup-title {
+        font-weight: bold;
+        font-size: 16px;
+        margin-bottom: 4px;
+        color: #1f2937;
+      }
+      .popup-description { font-size: 14px; color: #374151; margin-bottom: 4px; }
+      .popup-info { font-size: 13px; color: #4b5563; }
+      .popup-image { width: 100%; height: auto; border-radius: 8px; margin-top: 6px; }
+      .popup-button {
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        padding: 6px 10px;
+        margin-top: 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+      }
+      .legend {
+        background: white;
+        padding: 12px;
+        font-size: 14px;
+        line-height: 20px;
+        color: #333;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      }
+      .legend i {
+        width: 16px;
+        height: 16px;
+        float: left;
+        margin-right: 6px;
+        opacity: 0.9;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+    <script>
+      var map = L.map('map', { attributionControl: false }).setView([${location?.latitude || 27.7172}, ${location?.longitude || 85.324}], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          maxZoom: 19,
-          attribution: '© OpenStreetMap contributors'
+      var reports = ${JSON.stringify(reports)};
+      var userLocation = [${location?.latitude || 27.7172}, ${location?.longitude || 85.324}];
+      var routeControl = null;
+
+      function getColor(priority) {
+        switch(priority) {
+          case "High": return "#ef4444";
+          case "Medium": return "#f59e0b";
+          case "Low": return "#10b981";
+          default: return "#3b82f6";
+        }
+      }
+
+      // User location marker
+      var userMarker = L.marker(userLocation, { icon: L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/64/64113.png", iconSize: [32, 32] }) })
+        .addTo(map).bindPopup("<b>You are here</b>");
+
+      // Report markers
+      reports.forEach((r, index) => {
+        var marker = L.circleMarker([r.latitude, r.longitude], {
+          radius: 10,
+          fillColor: getColor(r.priority),
+          color: "#111827",
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.9
         }).addTo(map);
 
-        var reports = ${JSON.stringify(reports)};
+        marker.bindPopup(
+          "<div class='popup-title'>" + r.type + "</div>" +
+          "<div class='popup-description'>" + r.description + "</div>" +
+          "<div class='popup-info'>Priority: " + r.priority + "<br>Status: " + r.status + "</div>" +
+          (r.image ? "<img class='popup-image' src='" + r.image + "' />" : "") +
+          "<button class='popup-button' onclick='drawRoute(" + index + ")'>Show Path</button>"
+        );
+      });
 
-        function getColor(priority) {
-          switch(priority) {
-            case "High": return "red";
-            case "Medium": return "orange";
-            case "Low": return "green";
-            default: return "blue";
-          }
-        }
+      function drawRoute(index) {
+        var r = reports[index];
+        if (routeControl) map.removeControl(routeControl);
+        routeControl = L.Routing.control({
+          waypoints: [ L.latLng(userLocation[0], userLocation[1]), L.latLng(r.latitude, r.longitude) ],
+          lineOptions: { styles: [{ color: '#2563eb', opacity: 0.7, weight: 5 }] },
+          createMarker: () => null,
+          addWaypoints: false,
+          draggableWaypoints: false,
+          fitSelectedRoutes: true
+        }).addTo(map);
+      }
 
-        reports.forEach(r => {
-          var marker = L.circleMarker([r.latitude, r.longitude], {
-            radius: 8,
-            fillColor: getColor(r.priority),
-            color: "#333",
-            weight: 1,
-            opacity: 1,
-            fillOpacity: 0.9
-          }).addTo(map);
-          marker.bindPopup(
-            "<div class='popup-title'>" + r.type + "</div>" +
-            "<div>" + r.description + "</div>" +
-            "<div>Priority: " + r.priority + "</div>" +
-            "<div>Status: " + r.status + "</div>"+
-            (r.image ? "<div><img src='" + r.image + "' alt='Report Image' style='width:100%;height:auto;margin-top:5px;'/></div>" : "")
-          );
-        });
-
-        ${
-          location
-            ? `L.circleMarker([${location.latitude}, ${location.longitude}], {
-                radius: 6,
-                fillColor: "#2563eb",
-                color: "#1d4ed8",
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 0.8
-              }).addTo(map).bindPopup("You are here");`
-            : ""
-        }
-
-        var legend = L.control({position: "bottomright"});
-        legend.onAdd = function (map) {
-          var div = L.DomUtil.create("div", "legend");
-          div.innerHTML += "<h4>Severity</h4>";
-          div.innerHTML += '<i style="background: red"></i> High<br>';
-          div.innerHTML += '<i style="background: orange"></i> Medium<br>';
-          div.innerHTML += '<i style="background: green"></i> Low<br>';
-          return div;
-        };
-        legend.addTo(map);
-      </script>
-    </body>
-    </html>
+      // Legend
+      var legend = L.control({position: "bottomright"});
+      legend.onAdd = function () {
+        var div = L.DomUtil.create('div', 'legend');
+        div.innerHTML += "<h4>Severity</h4>";
+        div.innerHTML += '<i style="background:#ef4444"></i> High<br>';
+        div.innerHTML += '<i style="background:#f59e0b"></i> Medium<br>';
+        div.innerHTML += '<i style="background:#10b981"></i> Low<br>';
+        return div;
+      };
+      legend.addTo(map);
+    </script>
+  </body>
+  </html>
   `
 
   return (
     <View style={styles.container}>
-      {/* Refresh Button */}
       <TouchableOpacity style={styles.refreshButton} onPress={fetchReports}>
         <Text style={styles.refreshText}>🔄 Refresh</Text>
       </TouchableOpacity>
-
       <WebView originWhitelist={["*"]} source={{ html: leafletHTML }} style={styles.map} />
     </View>
   )
@@ -177,15 +206,19 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
   refreshButton: {
+    position: "absolute",
+    top: 16,
+    left: 16,
+    zIndex: 10,
     backgroundColor: "#2563eb",
-    padding: 5,
-    borderRadius: 3,
-    alignItems: "center",
-    margin: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
   },
-  refreshText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
+  refreshText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  loading: { flex: 1, justifyContent: "center", alignItems: "center" },
 })

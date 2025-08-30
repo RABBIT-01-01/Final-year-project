@@ -63,162 +63,214 @@ const MapModal = ({ visible, onClose }) => {
       Alert.alert("Network Error", "Could not load reported locations.")
     }
   }
+  
 
   const mapHTML = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Location Map</title>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <style>
-          body { margin: 0; padding: 0; display: flex; }
-          #map { height: 100vh; width: 70vw; }
-          #sidebar {
-            height: 100vh;
-            width: 30vw;
-            padding: 15px;
-            box-sizing: border-box;
-            border-left: 1px solid #ddd;
-            background: #fff;
-            overflow-y: auto;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-          }
-          #sidebar h3 { margin: 0 0 10px; font-size: 18px; }
-          #sidebar p { margin: 6px 0; line-height: 1.35; }
-          #sidebar img {
-            width: 100%;
-            max-height: 220px;
-            object-fit: cover;
-            margin-top: 10px;
-            border-radius: 8px;
-          }
-          .pill { display:inline-block; padding:4px 8px; border-radius:999px; border:1px solid #eee; font-size:12px; margin: 0 4px 8px 0; }
-          .leaflet-control-attribution { display: none; }
-          @media (max-width: 900px) {
-            #map { width: 60vw; }
-            #sidebar { width: 40vw; }
-          }
-          @media (max-width: 700px) {
-            body { flex-direction: column; }
-            #map { width: 100vw; height: 60vh; }
-            #sidebar { width: 100vw; height: 40vh; }
-          }
-        </style>
-      </head>
-      <body>
-        <div id="map"></div>
-        <div id="sidebar">
-          <h3>Location Details</h3>
-          <p>Select a marker to see details.</p>
-        </div>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+      body { margin: 0; padding: 0; display: flex; }
+      #map { height: 100vh; width: 70vw; }
+      #sidebar {
+        height: 100vh;
+        width: 30vw;
+        padding: 15px;
+        box-sizing: border-box;
+        border-left: 1px solid #ddd;
+        background: #fff;
+        overflow-y: auto;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      }
+      #sidebar h3 { margin: 0 0 10px; font-size: 18px; }
+      #sidebar p { margin: 6px 0; line-height: 1.35; }
+      #sidebar img {
+        width: 100%;
+        max-height: 220px;
+        object-fit: cover;
+        margin-top: 10px;
+        border-radius: 8px;
+      }
+      .pill { display:inline-block; padding:4px 8px; border-radius:999px; border:1px solid #eee; font-size:12px; margin: 0 4px 8px 0; }
+      .leaflet-control-attribution { display: none; }
+      @media (max-width: 900px) {
+        #map { width: 60vw; }
+        #sidebar { width: 40vw; }
+      }
+      @media (max-width: 700px) {
+        body { flex-direction: column; }
+        #map { width: 100vw; height: 60vh; }
+        #sidebar { width: 100vw; height: 40vh; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="sidebar">
+      <h3>Location Details</h3>
+      <p>Select a marker to see details.</p>
+    </div>
 
-        <script>
-          // Basic HTML escaping
-          function esc(s) {
-            return (s == null ? "" : String(s))
-              .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-              .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
-          }
+    <script>
+      function esc(s) {
+        return (s == null ? "" : String(s))
+          .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+          .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+      }
 
-          var map = L.map('map').setView([27.7089, 85.3206], 13);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+      var map = L.map('map').setView([27.7089, 85.3206], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
 
-          var currentLocationMarker = null;
-          var otherMarkers = [];
-          var otherBounds = L.latLngBounds();
+      var currentLocationMarker = null;
+      var hazards = [];   // store hazards from native
+      var renderedMarkers = [];
 
-          var currentLocationIcon = L.icon({
-            iconUrl: 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" fill="#007AFF" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>'),
-            iconSize: [28, 28],
-            iconAnchor: [14, 28],
-            popupAnchor: [0, -28]
-          });
-
-          var otherLocationIcon = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-            iconSize: [30, 30],
-            iconAnchor: [15, 30],
-            popupAnchor: [0, -30]
-          });
-
-          // Show current location
-          window.setCurrentLocationFromNative = function(lat, lng, accuracy) {
-            try {
-              if (currentLocationMarker) map.removeLayer(currentLocationMarker);
-              map.setView([lat, lng], 15);
-              currentLocationMarker = L.marker([lat, lng], { icon: currentLocationIcon })
-                .addTo(map)
-                .bindPopup("Your current location (±" + Math.round(accuracy) + "m)").openPopup();
-            } catch (e) { console.log("setCurrentLocationFromNative error", e); }
-          };
-
-          // Add all markers with details
-          window.setAllMarkersFromNative = function(items) {
-            try {
-              // clear
-              otherMarkers.forEach(m => map.removeLayer(m));
-              otherMarkers = [];
-              otherBounds = L.latLngBounds();
-
-              if (!Array.isArray(items)) return;
-
-              items.forEach(function(m) {
-                var lat = parseFloat(m?.coordinates?.latitude);
-                var lng = parseFloat(m?.coordinates?.longitude);
-                if (!isFinite(lat) || !isFinite(lng)) return;
-
-                var marker = L.marker([lat, lng], { icon: otherLocationIcon }).addTo(map);
-                marker.on("click", function() { showDetails(m); });
-                otherMarkers.push(marker);
-                otherBounds.extend([lat, lng]);
-              });
-
-              // Fit bounds if we have at least one
-              if (otherMarkers.length > 0) {
-                map.fitBounds(otherBounds.pad(0.2));
-              }
-            } catch (e) { console.log("setAllMarkersFromNative error", e); }
-          };
-
-          // Sidebar renderer (NO nested template literal here)
-         function showDetails(data) {
-            var sidebar = document.getElementById("sidebar");
-            var title = esc(data?.issueType) || "Unknown";
-            var sev = esc(data?.severityLevel) || "N/A";
-            var desc = esc(data?.description) || "No description";
-            var addr = esc(data?.location) || "No address available";
-            var img = (data && data.image) ? String(data.image) : "";
-
-            // always prepend backend API
-            var fullUrl = "http://${URL}:4000/api/" + img.replace(/^\\/+/,"");
+      var currentLocationIcon = L.divIcon({
+        html: '<div style="width:20px;height:20px;background:#007AFF;border:3px solid white;border-radius:50%;box-shadow:0 0 6px rgba(0,0,0,0.3);"></div>',
+        className: "",  
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+        popupAnchor: [0, -10]
+      });
 
 
-            var html =
-                '<h3>' + title + ' (' + sev + ')</h3>' +
-                '<div class="pill">' + title + '</div>' +
-                '<div class="pill">Severity: ' + sev + '</div>' +
-                '<p><b>Description:</b> ' + desc + '</p>' +
-                '<p><b>Location:</b> ' + addr + '</p>';
+      // ----------- CLUSTERING UTILS ----------
+      const haversineDistance = (lat1, lng1, lat2, lng2) => {
+        const R = 6371;
+        const dLat = ((lat2 - lat1) * Math.PI) / 180;
+        const dLng = ((lng2 - lng1) * Math.PI) / 180;
+        const a = Math.sin(dLat/2)**2 +
+          Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
+          Math.sin(dLng/2)**2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R*c;
+      };
 
-            if (img) {
-                html +=
-                '<img src="' +
-                fullUrl.replace(/"/g, "&quot;") +
-                '" alt="Issue Image" style="max-width:100%;border-radius:8px;margin-top:10px;" />';
+      const clusterHazards = (hazards, zoom) => {
+        const threshold =
+          zoom >= 16 ? 0 :
+          zoom >= 14 ? 0.3 :
+          zoom >= 12 ? 0.7 :
+          zoom >= 10 ? 5 :
+          zoom >= 8 ? 10 : 20;
+
+        const clusters = [];
+        const visited = new Set();
+
+        for (let i=0;i<hazards.length;i++) {
+          if (visited.has(i)) continue;
+          const cluster = [hazards[i]];
+          visited.add(i);
+          for (let j=i+1;j<hazards.length;j++) {
+            if (visited.has(j)) continue;
+            const dist = haversineDistance(
+              hazards[i].lat, hazards[i].lng,
+              hazards[j].lat, hazards[j].lng
+            );
+            if (dist < threshold) {
+              cluster.push(hazards[j]);
+              visited.add(j);
             }
+          }
+          clusters.push(cluster);
+        }
+        return clusters;
+      };
 
-            sidebar.innerHTML = html;
-            }
+      function clearMarkers() {
+        renderedMarkers.forEach(m => map.removeLayer(m));
+        renderedMarkers = [];
+      }
 
+      function renderClusters() {
+        clearMarkers();
+        const zoom = map.getZoom();
+        const clusters = clusterHazards(hazards, zoom);
 
-          console.log('Map initialized');
-        </script>
-      </body>
-    </html>
-  `
+        clusters.forEach(cluster => {
+          if (cluster.length === 1) {
+            const hazard = cluster[0];
+            const marker = L.marker([hazard.lat, hazard.lng]).addTo(map);
+            marker.on("click", () => showDetails(hazard));
+            renderedMarkers.push(marker);
+          } else {
+            const latAvg = cluster.reduce((sum,h)=>sum+h.lat,0)/cluster.length;
+            const lngAvg = cluster.reduce((sum,h)=>sum+h.lng,0)/cluster.length;
+            const clusterIcon = L.divIcon({
+              html: '<div style="background:#4B5563;color:white;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:12px;">'+cluster.length+'</div>',
+              className: "cluster-marker",
+              iconSize: [30,30],
+              iconAnchor: [15,15]
+            });
+            const marker = L.marker([latAvg,lngAvg],{icon:clusterIcon}).addTo(map);
+            renderedMarkers.push(marker);
+          }
+        });
+      }
+
+      // ------------- Hooks for Native ---------------
+      window.setCurrentLocationFromNative = function(lat,lng,accuracy) {
+        if (currentLocationMarker) map.removeLayer(currentLocationMarker);
+        map.setView([lat,lng],15);
+        currentLocationMarker = L.marker([lat,lng],{icon:currentLocationIcon})
+          .addTo(map)
+          .bindPopup("Your current location (±"+Math.round(accuracy)+"m)").openPopup();
+      };
+
+      window.setAllMarkersFromNative = function(items) {
+        hazards = [];
+        items.forEach(m => {
+          const lat = parseFloat(m?.coordinates?.latitude);
+          const lng = parseFloat(m?.coordinates?.longitude);
+          if (!isFinite(lat)||!isFinite(lng)) return;
+          hazards.push({
+            lat: lat,
+            lng: lng,
+            issueType: m.issueType,
+            severityLevel: m.severityLevel,
+            description: m.description,
+            location: m.location,
+            image: m.image
+          });
+        });
+        renderClusters();
+      };
+
+      map.on("zoomend", renderClusters);
+
+      function showDetails(data) {
+        var sidebar = document.getElementById("sidebar");
+        var title = esc(data?.issueType)||"Unknown";
+        var sev = esc(data?.severityLevel)||"N/A";
+        var desc = esc(data?.description)||"No description";
+        var addr = esc(data?.location)||"No address available";
+        var img = data?.image ? String(data.image) : "";
+        var fullUrl = "http://${URL}:4000/api/" + img.replace(/^\\/+/,"");
+
+        var html =
+          '<h3>'+title+' ('+sev+')</h3>'+
+          '<div class="pill">'+title+'</div>'+
+          '<div class="pill">Severity: '+sev+'</div>'+
+          '<p><b>Description:</b> '+desc+'</p>'+
+          '<p><b>Location:</b> '+addr+'</p>';
+
+        if (img) {
+          html += '<img src="'+fullUrl.replace(/"/g,"&quot;")+'" />';
+        }
+        sidebar.innerHTML = html;
+      }
+
+      console.log("Map initialized with clustering");
+    </script>
+  </body>
+</html>
+`;
+
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">

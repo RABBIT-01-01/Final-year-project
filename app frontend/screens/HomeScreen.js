@@ -73,12 +73,7 @@ const HomeScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Quick Stats */}
-        <View style={styles.statsContainer}>
-          <QuickStatsCard title="Total Reports" value={reportsCount} icon="📊" color="#007AFF" />
-          {/* <QuickStatsCard title="This Month" value={0} icon="📅" color="#4CAF50" /> */}
-          <QuickStatsCard title="High Priority" value={0} icon="⚠️" color="#F44336" />
-        </View>
+        
 
         {/* Main Actions */}
         <View style={styles.section}>
@@ -92,7 +87,7 @@ const HomeScreen = ({ navigation }) => {
           />
           <MenuCard
             title="View Previous Reports"
-            subtitle={`${reportsCount} report${reportsCount !== 1 ? "s" : ""} submitted`}
+            subtitle={`your previous reports`}
             icon="📋"
             color="#007AFF"
             onPress={() => navigation.navigate("PreviousReports")}
